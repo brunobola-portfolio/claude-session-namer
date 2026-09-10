@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: node ${{ matrix.node }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm test
+      - name: Hook contract smoke (fake model result)
+        shell: bash
+        env:
+          CLAUDE_CONFIG_DIR: ${{ runner.temp }}/claude-cfg
+          SESSION_NAMER_FAKE_RESULT: Add pagination to the customers list
+          SESSION_NAMER_PROJECT_SOURCE: cwd
+        run: |
+          out=$(printf '{"session_id":"ci1","cwd":"%s","hook_event_name":"UserPromptSubmit","prompt":"Add pagination to the customers list and write tests"}' "$PWD" | node hooks/namer.js UserPromptSubmit)
+          echo "$out"
+          echo "$out" | grep -q '"sessionTitle":"claude-session-namer - Add pagination to the customers list"'
