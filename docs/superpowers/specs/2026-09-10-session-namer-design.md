@@ -1,7 +1,7 @@
 # claude-session-namer — Design Spec
 
 **Date:** 2026-09-10
-**Status:** Implemented in v1.0.0 (2026-09-10). Amended after real-world testing: headless generation uses "lean" mode instead of `--bare` (see 4.5), the prompt is piped through stdin, and the default timeout is 12 s.
+**Status:** Implemented in v1.0.0 (2026-09-10). Amended after real-world testing: headless generation uses "lean" mode instead of `--bare` (see 4.5), the prompt is piped through stdin, and the default timeout is 15 s.
 **Author:** Bruno Bola (with Claude Code)
 
 ## 1. Purpose
@@ -170,7 +170,7 @@ opt-in via `SESSION_NAMER_BARE=1` for API-key users only.
   session title: 3 to 7 words describing the task, in the same language
   as the user's message, sentence case, no quotes, no trailing period,
   no emoji." Plus three few-shot examples (pt, en, es).
-- Timeout 12 s (option `timeout_ms`). On timeout the child is killed
+- Timeout 15 s (option `timeout_ms`, max 25 s; Claude Code startup on Windows alone takes 4 to 8 s). On timeout the child is killed
   (`SIGTERM`, then `SIGKILL` after 1 s; on Windows `taskkill /T /F`).
 - Result parsing: read the `result` field from the JSON output; if the
   CLI returns non-JSON or an error, fall back to plain stdout; sanitise
@@ -218,7 +218,7 @@ exported as `CLAUDE_PLUGIN_OPTION_<KEY>`), all optional:
 | `model` | string | `haiku` | Model for topic generation |
 | `separator` | string | ` - ` | Between project and topic |
 | `max_words` | number | 7 | Topic word cap (min 3) |
-| `timeout_ms` | number | 12000 | Generation timeout |
+| `timeout_ms` | number | 15000 | Generation timeout |
 | `project_source` | string | `git` | `git` (repo root name) or `cwd` |
 | `name_headless` | boolean | false | Also name `claude -p` sessions |
 | `enabled` | boolean | true | Master switch |

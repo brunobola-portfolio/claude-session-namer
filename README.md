@@ -85,7 +85,7 @@ Claude Code asks for these options when you enable the plugin (`/plugin configur
 | `model` | `haiku` | Model alias or id used to summarise the first prompt |
 | `separator` | ` - ` | Text between project and topic |
 | `max_words` | `7` | Upper bound for topic words (3 to 12) |
-| `timeout_ms` | `12000` | How long to wait for the topic before keeping the project-only title |
+| `timeout_ms` | `15000` | How long to wait for the topic before keeping the project-only title |
 | `project_source` | `git` | `git` uses the repository folder name (shared by all worktrees); `cwd` uses the current folder |
 | `name_headless` | `false` | Also name `claude -p` sessions |
 | `enabled` | `true` | Master switch |

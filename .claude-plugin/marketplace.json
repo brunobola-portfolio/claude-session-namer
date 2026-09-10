@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Marketplace for the session-namer plugin: automatic \"<project> - <topic>\" titles for every Claude Code session.",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   "plugins": [
     {
       "name": "session-namer",
       "source": "./",
       "description": "Automatically titles every Claude Code session \"<project> - <topic>\" from the first prompt.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "productivity",
       "keywords": ["session", "title", "rename", "remote-control"]
     }

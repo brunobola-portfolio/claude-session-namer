@@ -1,6 +1,6 @@
 {
   "name": "claude-session-namer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Claude Code plugin that automatically titles every session \"<project> - <topic>\" from the first prompt.",
   "private": true,
   "license": "MIT",
