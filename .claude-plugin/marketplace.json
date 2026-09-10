@@ -1,0 +1,21 @@
+{
+  "name": "claude-session-namer",
+  "owner": {
+    "name": "Bruno Bola",
+    "url": "https://github.com/brunobola"
+  },
+  "metadata": {
+    "description": "Marketplace for the session-namer plugin: automatic \"<project> - <topic>\" titles for every Claude Code session.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "session-namer",
+      "source": "./",
+      "description": "Automatically titles every Claude Code session \"<project> - <topic>\" from the first prompt.",
+      "version": "1.0.0",
+      "category": "productivity",
+      "keywords": ["session", "title", "rename", "remote-control"]
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "name": "session-namer",
+  "version": "1.0.0",
+  "description": "Automatically titles every Claude Code session \"<project> - <topic>\" from the first prompt. Works in the CLI, VS Code and Remote Control, on Windows, macOS and Linux.",
+  "author": {
+    "name": "Bruno Bola",
+    "url": "https://github.com/brunobola"
+  },
+  "homepage": "https://github.com/brunobola-portfolio/claude-session-namer",
+  "repository": "https://github.com/brunobola-portfolio/claude-session-namer",
+  "license": "MIT",
+  "keywords": ["session", "title", "rename", "remote-control", "hooks"],
+  "hooks": "./hooks/hooks.json",
+  "commands": "./commands",
+  "userConfig": {
+    "model": {
+      "type": "string",
+      "title": "Model for topic generation",
+      "description": "Model alias or id used to summarise the first prompt into a short topic. Fast models are ideal.",
+      "default": "haiku"
+    },
+    "separator": {
+      "type": "string",
+      "title": "Separator",
+      "description": "Text placed between the project name and the topic.",
+      "default": " - "
+    },
+    "max_words": {
+      "type": "number",
+      "title": "Maximum topic words",
+      "description": "Upper bound for the number of words in the generated topic (3 to 12).",
+      "default": 7,
+      "min": 3,
+      "max": 12
+    },
+    "timeout_ms": {
+      "type": "number",
+      "title": "Generation timeout (ms)",
+      "description": "How long to wait for the topic before giving up and keeping the project-only title.",
+      "default": 8000,
+      "min": 1000,
+      "max": 20000
+    },
+    "project_source": {
+      "type": "string",
+      "title": "Project name source",
+      "description": "\"git\" uses the repository folder name (shared by all worktrees); \"cwd\" uses the current folder name.",
+      "default": "git"
+    },
+    "name_headless": {
+      "type": "boolean",
+      "title": "Also name headless (claude -p) sessions",
+      "description": "When false, sessions started with -p are left untouched to avoid an extra model call.",
+      "default": false
+    },
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Master switch. Turn off to keep the plugin installed but inactive.",
+      "default": true
+    }
+  }
+}

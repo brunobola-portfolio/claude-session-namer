@@ -1,0 +1,26 @@
+{
+  "name": "claude-session-namer",
+  "version": "1.0.0",
+  "description": "Claude Code plugin that automatically titles every session \"<project> - <topic>\" from the first prompt.",
+  "private": true,
+  "license": "MIT",
+  "author": "Bruno Bola",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/brunobola-portfolio/claude-session-namer.git"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test test/",
+    "doctor": "node hooks/session-name-cli.js --doctor"
+  },
+  "keywords": [
+    "claude-code",
+    "claude-code-plugin",
+    "hooks",
+    "session",
+    "remote-control"
+  ]
+}
