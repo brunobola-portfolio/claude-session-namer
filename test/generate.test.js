@@ -2,7 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');
-const { generateTopic, findClaude, buildArgs, SYSTEM_PROMPT } = require('../lib/generate');
+const { generateTopic, findClaude, promptForStdin, SYSTEM_PROMPT } = require('../lib/generate');
 
 /** Build a fake spawn that returns a child which emits the given script. */
 function fakeSpawn(script) {
@@ -11,6 +11,7 @@ function fakeSpawn(script) {
     const child = new EventEmitter();
     child.stdout = new EventEmitter();
     child.stderr = new EventEmitter();
+    child.stdin = Object.assign(new EventEmitter(), { written: '', end(data) { this.written += data; } });
     child.pid = 4242;
     child.killed = false;
     child.kill = () => { child.killed = true; child.emit('close', null, 'SIGTERM'); };
@@ -38,7 +39,8 @@ test('success: parses --output-format json result', async () => {
   assert.equal(args[args.indexOf('--model') + 1], 'haiku');
   assert.equal(args[args.indexOf('--output-format') + 1], 'json');
   assert.equal(args[args.indexOf('--system-prompt') + 1], SYSTEM_PROMPT);
-  assert.equal(args[args.length - 1], 'Migra as faturas para a V10');
+  assert.equal(spawn.calls[0].child.stdin.written, 'Migra as faturas para a V10');
+  assert.ok(!args.includes('Migra as faturas para a V10'), 'prompt must travel through stdin, not argv');
   assert.equal(options.env.SESSION_NAMER_NESTED, '1');
   assert.equal(options.windowsHide, true);
 });
@@ -83,15 +85,17 @@ test('SESSION_NAMER_BARE=1 switches to --bare for API-key users', async () => {
   assert.ok(!args.includes('--strict-mcp-config'));
 });
 
-test('buildArgs truncates huge prompts', () => {
-  const args = buildArgs({ prompt: 'x'.repeat(10000), model: 'haiku' });
-  assert.ok(args[args.length - 1].length < 2000);
+test('promptForStdin truncates huge prompts', () => {
+  assert.ok(promptForStdin('x'.repeat(10000)).length < 2000);
+  assert.equal(promptForStdin('small'), 'small');
 });
 
 test('findClaude honours SESSION_NAMER_CLAUDE_PATH and wraps .cmd on Windows', () => {
   assert.deepEqual(findClaude({ SESSION_NAMER_CLAUDE_PATH: '/opt/claude' }, { platform: 'linux', exists: () => true }), { command: '/opt/claude', args: [] });
-  const win = findClaude({ SESSION_NAMER_CLAUDE_PATH: 'C:\\x\\claude.cmd' }, { platform: 'win32', exists: () => true });
+  const win = findClaude({ SESSION_NAMER_CLAUDE_PATH: 'C:\\x\\claude.cmd' }, { platform: 'win32', exists: (p) => p.endsWith('claude.cmd') });
   assert.deepEqual(win, { command: 'cmd.exe', args: ['/d', '/s', '/c', 'C:\\x\\claude.cmd'] });
+  const shim = findClaude({ SESSION_NAMER_CLAUDE_PATH: 'C:\\x\\claude.cmd' }, { platform: 'win32', exists: () => true });
+  assert.deepEqual(shim, { command: 'C:\\x\\node_modules\\@anthropic-ai\\claude-code\\bin\\claude.exe', args: [] }, 'prefer the real exe behind the npm shim');
   const exe = findClaude({ SESSION_NAMER_CLAUDE_PATH: 'C:\\x\\claude.exe' }, { platform: 'win32', exists: () => true });
   assert.deepEqual(exe, { command: 'C:\\x\\claude.exe', args: [] });
 });
