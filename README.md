@@ -23,7 +23,7 @@ Three tiny hooks, one Node script, zero dependencies:
 | Moment | What happens | Cost |
 | :-- | :-- | :-- |
 | Session starts | Title becomes the **project name** (git repository folder, worktree-aware) | 0 ms, no network |
-| First real prompt | A fast model turns your prompt into a **3 to 7 word topic in the language you wrote**; title becomes `<project> - <topic>` | ~5 s, ≈ USD 0.004 with Haiku |
+| First real prompt | A fast model turns your prompt into a **3 to 7 word topic in the language you wrote**; title becomes `<project> - <topic>` | 5 to 15 s (Claude Code startup dominates), ≈ USD 0.004 with Haiku |
 | First turn ends | Title is re-asserted once, so the VS Code sidebar keeps it | 0 ms |
 
 Titles are set only through Claude Code's documented `sessionTitle` hook output, the same mechanism as `/rename`. A title you set yourself (with `--name`, `/rename`, or from claude.ai) is never overwritten.
@@ -85,7 +85,7 @@ Claude Code asks for these options when you enable the plugin (`/plugin configur
 | `model` | `haiku` | Model alias or id used to summarise the first prompt |
 | `separator` | ` - ` | Text between project and topic |
 | `max_words` | `7` | Upper bound for topic words (3 to 12) |
-| `timeout_ms` | `15000` | How long to wait for the topic before keeping the project-only title |
+| `timeout_ms` | `20000` | How long to wait for the topic before keeping the project-only title |
 | `project_source` | `git` | `git` uses the repository folder name (shared by all worktrees); `cwd` uses the current folder |
 | `name_headless` | `false` | Also name `claude -p` sessions |
 | `enabled` | `true` | Master switch |

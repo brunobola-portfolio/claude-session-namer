@@ -1,6 +1,6 @@
 {
   "name": "session-namer",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Automatically titles every Claude Code session \"<project> - <topic>\" from the first prompt. Works in the CLI, VS Code and Remote Control, on Windows, macOS and Linux.",
   "author": {
     "name": "Bruno Bola",
@@ -35,9 +35,9 @@
       "type": "number",
       "title": "Generation timeout (ms)",
       "description": "How long to wait for the topic before giving up and keeping the project-only title.",
-      "default": 15000,
+      "default": 20000,
       "min": 1000,
-      "max": 25000
+      "max": 27000
     },
     "project_source": {
       "type": "string",

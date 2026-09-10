@@ -125,7 +125,7 @@ async function run(event, input, deps = {}) {
     save({ stage: 'provisional', title: (st && st.title) || project, attempts: attempts + 1, lastAttemptTs: now() });
     let raw = null;
     try {
-      raw = await generate({ prompt: input.prompt, model: cfg.model, timeoutMs: cfg.timeoutMs, env });
+      raw = await generate({ prompt: input.prompt, model: cfg.model, timeoutMs: cfg.timeoutMs, env, log: (m) => log(`generate: ${m}`) });
     } catch (err) {
       log(`generate threw: ${err && err.message}`);
     }

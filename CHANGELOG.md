@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.3] - 2026-09-10
+
+### Changed
+
+- Default generation timeout raised to 20 s (max 27 s) after a timeout under load
+  on Windows; the platform hook timeout is 28 s.
+- The log now records why a generation failed (timeout, exit code and stderr,
+  or unusable output) so `--doctor` and the log explain themselves.
+
 ## [1.0.2] - 2026-09-10
 
 ### Fixed
