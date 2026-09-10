@@ -13,7 +13,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node --test test/",
+    "test": "node --test",
     "doctor": "node hooks/session-name-cli.js --doctor"
   },
   "keywords": [
