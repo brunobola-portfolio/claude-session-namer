@@ -1,6 +1,6 @@
 {
   "name": "session-namer",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Automatically titles every Claude Code session \"<project> - <topic>\" from the first prompt. Works in the CLI, VS Code and Remote Control, on Windows, macOS and Linux.",
   "author": {
     "name": "Bruno Bola",
@@ -10,8 +10,6 @@
   "repository": "https://github.com/brunobola-portfolio/claude-session-namer",
   "license": "MIT",
   "keywords": ["session", "title", "rename", "remote-control", "hooks"],
-  "hooks": "./hooks/hooks.json",
-  "commands": "./commands",
   "userConfig": {
     "model": {
       "type": "string",

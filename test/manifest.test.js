@@ -15,7 +15,10 @@ test('plugin.json is valid and declares the documented userConfig keys', () => {
   const plugin = readJson('.claude-plugin/plugin.json');
   assert.equal(plugin.name, 'session-namer');
   assert.match(plugin.version, /^\d+\.\d+\.\d+$/);
-  assert.equal(plugin.hooks, './hooks/hooks.json');
+  // hooks/hooks.json and commands/ are auto-discovered; declaring them again
+  // makes Claude Code fail with "Duplicate hooks file detected".
+  assert.equal(plugin.hooks, undefined);
+  assert.equal(plugin.commands, undefined);
   assert.deepEqual(Object.keys(plugin.userConfig).sort(), [...USER_CONFIG_KEYS].sort());
   for (const [key, opt] of Object.entries(plugin.userConfig)) {
     assert.ok(opt.type && opt.title && opt.description, `userConfig.${key} needs type/title/description`);

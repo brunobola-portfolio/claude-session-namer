@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.2] - 2026-09-10
+
+### Fixed
+
+- Plugin manifest no longer redeclares `hooks/hooks.json` and `commands/`, which
+  Claude Code auto-discovers; the duplicate made hook loading fail with
+  "Duplicate hooks file detected" on install.
+
 ## [1.0.1] - 2026-09-10
 
 ### Changed
