@@ -30,7 +30,11 @@ test('success: parses --output-format json result', async () => {
   assert.equal(topic, 'Migração de faturas para V10');
   const { command, args, options } = spawn.calls[0];
   assert.equal(command, 'claude');
-  assert.ok(args.includes('--bare') && args.includes('-p') && args.includes('--no-session-persistence'));
+  assert.ok(args.includes('-p') && args.includes('--no-session-persistence') && args.includes('--strict-mcp-config'));
+  assert.ok(!args.includes('--bare'), 'lean mode by default (OAuth logins cannot use --bare)');
+  assert.equal(args[args.indexOf('--setting-sources') + 1], '');
+  assert.equal(args[args.indexOf('--tools') + 1], '');
+  assert.equal(args[args.indexOf('--max-turns') + 1], '1');
   assert.equal(args[args.indexOf('--model') + 1], 'haiku');
   assert.equal(args[args.indexOf('--output-format') + 1], 'json');
   assert.equal(args[args.indexOf('--system-prompt') + 1], SYSTEM_PROMPT);
@@ -69,6 +73,14 @@ test('SESSION_NAMER_FAKE_RESULT short-circuits without spawning', async () => {
   const spawn = fakeSpawn(() => { throw new Error('must not spawn'); });
   assert.equal(await generateTopic({ ...base, env: { SESSION_NAMER_FAKE_RESULT: 'Fake topic here' }, spawn }), 'Fake topic here');
   assert.equal(spawn.calls.length, 0);
+});
+
+test('SESSION_NAMER_BARE=1 switches to --bare for API-key users', async () => {
+  const spawn = fakeSpawn((c) => { c.stdout.emit('data', Buffer.from('{"result":"Fix login bug"}')); c.emit('close', 0); });
+  await generateTopic({ ...base, env: { SESSION_NAMER_BARE: '1' }, spawn });
+  const { args } = spawn.calls[0];
+  assert.ok(args.includes('--bare'));
+  assert.ok(!args.includes('--strict-mcp-config'));
 });
 
 test('buildArgs truncates huge prompts', () => {

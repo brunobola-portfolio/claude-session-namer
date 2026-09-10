@@ -150,10 +150,17 @@ the next eligible prompt will try again (state stays `provisional`).
 Command (exec form, spawned by the hook, not via shell):
 
 ```
-claude -p --bare --model <model> --no-session-persistence \
-  --output-format json \
+claude -p --no-session-persistence --max-turns 1 --model <model> \
+  --setting-sources "" --strict-mcp-config --mcp-config '{"mcpServers":{}}' \
+  --tools "" --disable-slash-commands --output-format json \
   --system-prompt "<fixed system prompt>" "<user prompt, truncated>"
 ```
+
+This is "lean" mode: no user settings (so no hooks or plugins), no MCP,
+no tools, no skills, one turn. Measured on 2026-09-10: about 4 to 5 s and
+USD 0.004 per title with Haiku. `--bare` is faster but skips keychain
+reads and therefore fails with "Not logged in" for OAuth logins; it is
+opt-in via `SESSION_NAMER_BARE=1` for API-key users only.
 
 - `model` default `haiku` (alias resolved by Claude Code); configurable.
 - The user prompt is truncated to the first 1 500 characters plus, if
@@ -162,7 +169,7 @@ claude -p --bare --model <model> --no-session-persistence \
   session title: 3 to 7 words describing the task, in the same language
   as the user's message, sentence case, no quotes, no trailing period,
   no emoji." Plus three few-shot examples (pt, en, es).
-- Timeout 8 s (option `timeout_ms`). On timeout the child is killed
+- Timeout 12 s (option `timeout_ms`). On timeout the child is killed
   (`SIGTERM`, then `SIGKILL` after 1 s; on Windows `taskkill /T /F`).
 - Result parsing: read the `result` field from the JSON output; if the
   CLI returns non-JSON or an error, fall back to plain stdout; sanitise
@@ -210,7 +217,7 @@ exported as `CLAUDE_PLUGIN_OPTION_<KEY>`), all optional:
 | `model` | string | `haiku` | Model for topic generation |
 | `separator` | string | ` - ` | Between project and topic |
 | `max_words` | number | 7 | Topic word cap (min 3) |
-| `timeout_ms` | number | 8000 | Generation timeout |
+| `timeout_ms` | number | 12000 | Generation timeout |
 | `project_source` | string | `git` | `git` (repo root name) or `cwd` |
 | `name_headless` | boolean | false | Also name `claude -p` sessions |
 | `enabled` | boolean | true | Master switch |

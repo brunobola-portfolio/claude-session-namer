@@ -21,7 +21,7 @@
             "type": "command",
             "command": "node",
             "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/namer.js", "UserPromptSubmit"],
-            "timeout": 20
+            "timeout": 25
           }
         ]
       }

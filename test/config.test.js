@@ -19,7 +19,7 @@ test('defaults when nothing is configured', () => {
     model: 'haiku',
     separator: ' - ',
     maxWords: 7,
-    timeoutMs: 8000,
+    timeoutMs: 12000,
     projectSource: 'git',
     nameHeadless: false,
     projectOverride: null,
@@ -92,7 +92,7 @@ test('numeric options are clamped and invalid values fall back to defaults', () 
   assert.equal(high.timeoutMs, 20000);
   const bad = loadConfig({ env: { SESSION_NAMER_MAX_WORDS: 'abc', SESSION_NAMER_TIMEOUT_MS: '', CLAUDE_PLUGIN_OPTION_PROJECT_SOURCE: 'nope' }, repoRoot: null });
   assert.equal(bad.maxWords, 7);
-  assert.equal(bad.timeoutMs, 8000);
+  assert.equal(bad.timeoutMs, 12000);
   assert.equal(bad.projectSource, 'git');
 });
 

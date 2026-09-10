@@ -37,7 +37,7 @@
       "type": "number",
       "title": "Generation timeout (ms)",
       "description": "How long to wait for the topic before giving up and keeping the project-only title.",
-      "default": 8000,
+      "default": 12000,
       "min": 1000,
       "max": 20000
     },

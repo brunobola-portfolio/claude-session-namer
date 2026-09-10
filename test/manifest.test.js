@@ -41,7 +41,7 @@ test('hooks.json registers the three events in exec form pointing at hooks/namer
     assert.equal(handler.type, 'command');
     assert.equal(handler.command, 'node');
     assert.deepEqual(handler.args, ['${CLAUDE_PLUGIN_ROOT}/hooks/namer.js', event]);
-    assert.ok(handler.timeout <= 20, `${event} timeout must stay under the platform default`);
+    assert.ok(handler.timeout <= 25, `${event} timeout must stay under the platform default (30 s)`);
   }
   assert.equal(hooks.SessionStart[0].matcher, 'startup|resume|fork');
 });
