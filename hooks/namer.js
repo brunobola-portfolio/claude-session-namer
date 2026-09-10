@@ -19,6 +19,23 @@ const EVENTS = new Set(['SessionStart', 'UserPromptSubmit', 'Stop']);
 
 const output = (event, sessionTitle) => ({ hookSpecificOutput: { hookEventName: event, sessionTitle } });
 
+/**
+ * Recognise `/session-name ...` prompts (the plugin's own slash command; the
+ * hook sees it before Claude does, and Claude Code passes plugin commands
+ * through as `/session-name` or `/session-namer:session-name`).
+ * @returns {{kind:'set',topic:string}|{kind:'regenerate'}|{kind:'other'}|null}
+ */
+function parseCommand(prompt) {
+  if (typeof prompt !== 'string') return null;
+  const m = prompt.trim().match(/^\/(?:session-namer:)?session-name(?:\s+([\s\S]*))?$/i);
+  if (!m) return null;
+  const arg = (m[1] || '').trim();
+  if (!arg || /^--regenerate$/i.test(arg)) return { kind: 'regenerate' };
+  if (/^--/.test(arg)) return { kind: 'other' };
+  const topic = title.sanitizeTopic(arg) || arg.replace(/\s+/g, ' ').slice(0, 60).trim();
+  return topic ? { kind: 'set', topic } : { kind: 'regenerate' };
+}
+
 /** Run `git <args>` in cwd, returning trimmed stdout or null. Never throws. */
 function defaultGit(cwd) {
   return (args) => {
@@ -85,13 +102,20 @@ async function run(event, input, deps = {}) {
   }
 
   if (event === 'UserPromptSubmit') {
-    if (st && st.pendingTitle) {
-      const pending = st.pendingTitle;
-      const next = { ...st, stage: 'user', title: pending, ts: now() };
-      delete next.pendingTitle;
-      state.writeState(dir, sessionId, next);
-      log(`applied pending "${pending}"`);
-      return output(event, pending);
+    const command = parseCommand(input.prompt);
+    if (command) {
+      if (command.kind === 'set') {
+        const full = title.formatTitle(project, command.topic, { separator: cfg.separator });
+        save({ stage: 'user', title: full, reasserted: true });
+        log(`manual "${full}"`);
+        return output(event, full);
+      }
+      if (command.kind === 'regenerate') {
+        save({ stage: 'provisional', title: project, attempts: 0, lastAttemptTs: 0, reasserted: false });
+        log('re-armed by /session-name');
+        return output(event, project);
+      }
+      return null; // --remote / --doctor: handled by the command's markdown
     }
     if (st && st.stage !== 'provisional') return null;
     if (!title.isEligiblePrompt(input.prompt)) return null;

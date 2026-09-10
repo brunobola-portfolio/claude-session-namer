@@ -128,17 +128,50 @@ test('Stop re-asserts the final title exactly once', async () => {
   assert.equal(await run('Stop', stop(), deps), null);
 });
 
-test('pending title from /session-name is applied on the next prompt even when final', async () => {
+test('/session-name <topic> renames immediately and locks the title', async () => {
   const { dir, deps, generateCalls } = makeDeps();
   await run('SessionStart', startup(), deps);
   await run('UserPromptSubmit', prompt('Migra as faturas para a V10 e valida os testes'), deps);
-  const st = readState(dir, 's1');
-  writeState(dir, 's1', { ...st, pendingTitle: 'arcva-2.0 - Nome manual' });
-  const out = await run('UserPromptSubmit', prompt('ok'), deps);
-  assert.equal(out.hookSpecificOutput.sessionTitle, 'arcva-2.0 - Nome manual');
-  assert.equal(readState(dir, 's1').pendingTitle, undefined);
+  const out = await run('UserPromptSubmit', prompt('/session-name Nome manual bonito'), deps);
+  assert.equal(out.hookSpecificOutput.sessionTitle, 'arcva-2.0 - Nome manual bonito');
   assert.equal(readState(dir, 's1').stage, 'user');
+  assert.equal(await run('Stop', stop(), deps), null);
+  assert.equal(await run('UserPromptSubmit', prompt('Outra tarefa completamente diferente agora'), deps), null);
   assert.equal(generateCalls.length, 1);
+  const ns = await run('UserPromptSubmit', prompt('/session-namer:session-name "Com prefixo de plugin"'), deps);
+  assert.equal(ns.hookSpecificOutput.sessionTitle, 'arcva-2.0 - Com prefixo de plugin');
+});
+
+test('/session-name with no args or --regenerate re-arms automatic naming', async () => {
+  const { dir, deps, generateCalls } = makeDeps();
+  await run('SessionStart', startup(), deps);
+  await run('UserPromptSubmit', prompt('Migra as faturas para a V10 e valida os testes'), deps);
+  const out = await run('UserPromptSubmit', prompt('/session-name --regenerate'), deps);
+  assert.equal(out.hookSpecificOutput.sessionTitle, 'arcva-2.0');
+  assert.equal(readState(dir, 's1').stage, 'provisional');
+  assert.equal(readState(dir, 's1').attempts, 0);
+  const again = await run('UserPromptSubmit', prompt('Agora adiciona paginação à lista de clientes'), deps);
+  assert.equal(again.hookSpecificOutput.sessionTitle, 'arcva-2.0 - Migração de faturas para V10');
+  assert.equal(generateCalls.length, 2);
+  assert.equal((await run('UserPromptSubmit', prompt('/session-name'), deps)).hookSpecificOutput.sessionTitle, 'arcva-2.0');
+});
+
+test('/session-name --remote and --doctor are left to the command markdown', async () => {
+  const { deps, generateCalls } = makeDeps();
+  await run('SessionStart', startup(), deps);
+  assert.equal(await run('UserPromptSubmit', prompt('/session-name --remote'), deps), null);
+  assert.equal(await run('UserPromptSubmit', prompt('/session-name --doctor'), deps), null);
+  assert.equal(generateCalls.length, 0);
+});
+
+test('doctor prints checks and a dry-run using the fake result', async () => {
+  const { doctor } = require('../hooks/session-name-cli');
+  const cfgDir = tmp();
+  const report = await doctor({ ...process.env, CLAUDE_CONFIG_DIR: cfgDir, SESSION_NAMER_FAKE_RESULT: 'Paginação na lista de clientes' });
+  assert.match(report, /^OK {3}Node\.js/m);
+  assert.match(report, /claude CLI:/);
+  assert.match(report, /state dir: /);
+  assert.match(report, /dry-run generation in \d+ ms -> "Paginação na lista de clientes"/);
 });
 
 test('config: separator, project override via repo file and cwd source', async () => {
