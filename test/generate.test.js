@@ -100,6 +100,18 @@ test('findClaude honours SESSION_NAMER_CLAUDE_PATH and wraps .cmd on Windows', (
   assert.deepEqual(exe, { command: 'C:\\x\\claude.exe', args: [] });
 });
 
+test('findClaude prefers CLAUDE_CODE_EXECPATH when the file exists', () => {
+  const env = { CLAUDE_CODE_EXECPATH: '/opt/claude-code/claude', PATH: '/usr/bin' };
+  const hit = findClaude(env, { platform: 'linux', pathSep: ':', exists: (p) => p === '/opt/claude-code/claude' });
+  assert.deepEqual(hit, { command: '/opt/claude-code/claude', args: [] });
+  // Explicit SESSION_NAMER_CLAUDE_PATH still outranks it.
+  const explicit = findClaude({ ...env, SESSION_NAMER_CLAUDE_PATH: '/opt/mine' }, { platform: 'linux', exists: () => true });
+  assert.deepEqual(explicit, { command: '/opt/mine', args: [] });
+  // A stale EXECPATH that no longer exists falls through to the PATH search.
+  const stale = findClaude(env, { platform: 'linux', pathSep: ':', exists: (p) => p === '/usr/bin/claude' });
+  assert.deepEqual(stale, { command: '/usr/bin/claude', args: [] });
+});
+
 test('findClaude searches PATH, then well-known locations, else plain "claude"', () => {
   const sep = ':';
   const found = findClaude({ PATH: `/usr/bin${sep}/home/u/.local/bin` }, {

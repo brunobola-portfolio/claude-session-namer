@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-11-03
+
+### Changed
+
+- The `Stop` hook is gone. The final title is now re-asserted on the next two
+  user prompts instead, which wins the race against the VS Code extension's own
+  auto-title more reliably and removes one hook invocation per turn.
+- `name_headless` is now actually honoured: sessions started with `claude -p`
+  (detected via `CLAUDE_CODE_ENTRYPOINT=sdk-cli`) are skipped entirely unless
+  the option is on, so headless scripts no longer pay a model call.
+- The `claude` executable is now resolved from `CLAUDE_CODE_EXECPATH` (exported
+  by Claude Code to hooks) before searching `PATH`, guaranteeing the same
+  version that runs the session also generates the title.
+  `SESSION_NAMER_CLAUDE_PATH` still outranks everything.
+
 ## [1.0.3] - 2026-09-10
 
 ### Changed

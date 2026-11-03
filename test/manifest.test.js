@@ -36,9 +36,10 @@ test('marketplace.json points at this plugin with the same version', () => {
   assert.equal(readJson('package.json').version, plugin.version);
 });
 
-test('hooks.json registers the three events in exec form pointing at hooks/namer.js', () => {
+test('hooks.json registers the two events in exec form pointing at hooks/namer.js', () => {
   const hooks = readJson('hooks/hooks.json').hooks;
-  for (const event of ['SessionStart', 'UserPromptSubmit', 'Stop']) {
+  assert.equal(hooks.Stop, undefined, 'Stop hook was replaced by prompt-time re-assertion in v1.1.0');
+  for (const event of ['SessionStart', 'UserPromptSubmit']) {
     assert.ok(hooks[event], `${event} missing`);
     const handler = hooks[event][0].hooks[0];
     assert.equal(handler.type, 'command');

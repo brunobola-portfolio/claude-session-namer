@@ -18,13 +18,13 @@ Open claude.ai/code or the Claude mobile app with ten Remote Control sessions ru
 
 ## How it works
 
-Three tiny hooks, one Node script, zero dependencies:
+Two tiny hooks, one Node script, zero dependencies:
 
 | Moment | What happens | Cost |
 | :-- | :-- | :-- |
 | Session starts | Title becomes the **project name** (git repository folder, worktree-aware) | 0 ms, no network |
 | First real prompt | A fast model turns your prompt into a **3 to 7 word topic in the language you wrote**; title becomes `<project> - <topic>` | 5 to 15 s (Claude Code startup dominates), ≈ USD 0.004 with Haiku |
-| First turn ends | Title is re-asserted once, so the VS Code sidebar keeps it | 0 ms |
+| Next two prompts | Title is re-asserted, so the VS Code sidebar keeps it even if the extension tries its own auto-title | 0 ms |
 
 Titles are set only through Claude Code's documented `sessionTitle` hook output, the same mechanism as `/rename`. A title you set yourself (with `--name`, `/rename`, or from claude.ai) is never overwritten.
 
@@ -90,7 +90,7 @@ Claude Code asks for these options when you enable the plugin (`/plugin configur
 | `name_headless` | `false` | Also name `claude -p` sessions |
 | `enabled` | `true` | Master switch |
 
-**Environment overrides** (handy for scripts and CI): `CLAUDE_SESSION_NAMER=off`, `SESSION_NAMER_MODEL`, `SESSION_NAMER_TIMEOUT_MS`, `SESSION_NAMER_MAX_WORDS`, `SESSION_NAMER_SEPARATOR`, `SESSION_NAMER_PROJECT_SOURCE`, `SESSION_NAMER_CLAUDE_PATH` (explicit path to the `claude` executable), `SESSION_NAMER_BARE=1` (use `claude --bare`, faster, **API-key logins only**).
+**Environment overrides** (handy for scripts and CI): `CLAUDE_SESSION_NAMER=off`, `SESSION_NAMER_MODEL`, `SESSION_NAMER_TIMEOUT_MS`, `SESSION_NAMER_MAX_WORDS`, `SESSION_NAMER_SEPARATOR`, `SESSION_NAMER_PROJECT_SOURCE`, `SESSION_NAMER_NAME_HEADLESS`, `SESSION_NAMER_CLAUDE_PATH` (explicit path to the `claude` executable; otherwise the `CLAUDE_CODE_EXECPATH` that Claude Code exports to hooks is used, then `PATH`), `SESSION_NAMER_BARE=1` (use `claude --bare`, faster, **API-key logins only**).
 
 **Per-repository override:** a `.session-namer.json` at the repository root can set a friendlier project name or switch the plugin off for that repo. Nothing else is read from it, and it never executes code.
 
@@ -111,7 +111,7 @@ Claude Code asks for these options when you enable the plugin (`/plugin configur
 
 The VS Code extension runs plugin hooks, so titles work there too. Two upstream limitations to know about:
 
-- The sidebar session list may keep showing the extension's own automatic title until you reopen the session; `claude --resume` and claude.ai/code show the plugin title immediately. The Stop hook re-asserts the title once to minimise this.
+- The sidebar session list may keep showing the extension's own automatic title until you reopen the session; `claude --resume` and claude.ai/code show the plugin title immediately. The plugin re-asserts the title on the next two prompts to win this race.
 - `/session-name` works in the VS Code prompt box like any other slash command.
 
 ## Troubleshooting

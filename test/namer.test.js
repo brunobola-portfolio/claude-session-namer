@@ -27,7 +27,6 @@ function makeDeps({ topic = 'Migração de faturas para V10', env = {}, generate
 
 const startup = (over = {}) => ({ session_id: 's1', cwd: 'D:/repos/arcva-2.0', hook_event_name: 'SessionStart', source: 'startup', ...over });
 const prompt = (text, over = {}) => ({ session_id: 's1', cwd: 'D:/repos/arcva-2.0', hook_event_name: 'UserPromptSubmit', prompt: text, ...over });
-const stop = (over = {}) => ({ session_id: 's1', cwd: 'D:/repos/arcva-2.0', hook_event_name: 'Stop', ...over });
 
 test('startup without title emits the provisional project title', async () => {
   const { dir, deps } = makeDeps();
@@ -74,9 +73,31 @@ test('first eligible prompt produces the final title and records it', async () =
   assert.equal(st.title, 'arcva-2.0 - Migração de faturas para V10');
   assert.equal(generateCalls.length, 1);
   assert.equal(generateCalls[0].model, 'haiku');
-  // Second prompt: nothing more.
-  assert.equal(await run('UserPromptSubmit', prompt('Agora corrige os testes que falharam'), deps), null);
-  assert.equal(generateCalls.length, 1);
+  // Next two prompts re-assert the final title (VS Code race), then silence.
+  const r1 = await run('UserPromptSubmit', prompt('Agora corrige os testes que falharam'), deps);
+  assert.equal(r1.hookSpecificOutput.sessionTitle, 'arcva-2.0 - Migração de faturas para V10');
+  const r2 = await run('UserPromptSubmit', prompt('E agora faz o deploy disto tudo'), deps);
+  assert.equal(r2.hookSpecificOutput.sessionTitle, 'arcva-2.0 - Migração de faturas para V10');
+  assert.equal(await run('UserPromptSubmit', prompt('Mais uma tarefa qualquer aqui'), deps), null);
+  assert.equal(generateCalls.length, 1); // never another model call
+});
+
+test('legacy state with reasserted:true never re-asserts again', async () => {
+  const { dir, deps } = makeDeps();
+  const base = { v: 1, stage: 'final', title: 'arcva-2.0 - Algo antigo', attempts: 1, project: 'arcva-2.0' };
+  writeState(dir, 's1', { ...base, reasserted: true });
+  assert.equal(await run('UserPromptSubmit', prompt('Outro pedido qualquer aqui'), deps), null);
+  assert.equal(readState(dir, 's1').stage, 'final');
+});
+
+test('headless (claude -p) sessions are skipped unless name_headless is on', async () => {
+  const off = makeDeps({ env: { CLAUDE_CODE_ENTRYPOINT: 'sdk-cli' } });
+  assert.equal(await run('SessionStart', startup(), off.deps), null);
+  assert.equal(await run('UserPromptSubmit', prompt('Migra as faturas para a V10 por favor'), off.deps), null);
+  assert.equal(off.generateCalls.length, 0);
+  const on = makeDeps({ env: { CLAUDE_CODE_ENTRYPOINT: 'sdk-cli', SESSION_NAMER_NAME_HEADLESS: '1' } });
+  const out = await run('SessionStart', startup(), on.deps);
+  assert.equal(out.hookSpecificOutput.sessionTitle, 'arcva-2.0');
 });
 
 test('ineligible prompts keep the provisional stage without calling the model', async () => {
@@ -119,15 +140,6 @@ test('plugin enabled mid-session: no state, first prompt goes straight to final'
   assert.equal(out.hookSpecificOutput.sessionTitle, 'arcva-2.0 - Migração de faturas para V10');
 });
 
-test('Stop re-asserts the final title exactly once', async () => {
-  const { deps } = makeDeps();
-  await run('SessionStart', startup(), deps);
-  assert.equal(await run('Stop', stop(), deps), null); // still provisional: nothing
-  await run('UserPromptSubmit', prompt('Migra as faturas para a V10 e valida os testes'), deps);
-  assert.deepEqual(await run('Stop', stop(), deps), { hookSpecificOutput: { hookEventName: 'Stop', sessionTitle: 'arcva-2.0 - Migração de faturas para V10' } });
-  assert.equal(await run('Stop', stop(), deps), null);
-});
-
 test('/session-name <topic> renames immediately and locks the title', async () => {
   const { dir, deps, generateCalls } = makeDeps();
   await run('SessionStart', startup(), deps);
@@ -135,7 +147,6 @@ test('/session-name <topic> renames immediately and locks the title', async () =
   const out = await run('UserPromptSubmit', prompt('/session-name Nome manual bonito'), deps);
   assert.equal(out.hookSpecificOutput.sessionTitle, 'arcva-2.0 - Nome manual bonito');
   assert.equal(readState(dir, 's1').stage, 'user');
-  assert.equal(await run('Stop', stop(), deps), null);
   assert.equal(await run('UserPromptSubmit', prompt('Outra tarefa completamente diferente agora'), deps), null);
   assert.equal(generateCalls.length, 1);
   const ns = await run('UserPromptSubmit', prompt('/session-namer:session-name "Com prefixo de plugin"'), deps);

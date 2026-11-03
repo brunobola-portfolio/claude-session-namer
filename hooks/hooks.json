@@ -25,18 +25,6 @@
           }
         ]
       }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node",
-            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/namer.js", "Stop"],
-            "timeout": 10
-          }
-        ]
-      }
     ]
   }
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 /**
- * Hook entry point: `node namer.js <SessionStart|UserPromptSubmit|Stop>`.
+ * Hook entry point: `node namer.js <SessionStart|UserPromptSubmit>`.
  * Reads the hook JSON from stdin, prints a JSON object with
  * hookSpecificOutput.sessionTitle when a title should change, nothing
  * otherwise. Always exits 0.
@@ -15,7 +15,11 @@ const { generateTopic } = require('../lib/generate');
 const STATE_VERSION = 1;
 const MAX_ATTEMPTS = 3;
 const RETRY_INTERVAL_MS = 60_000;
-const EVENTS = new Set(['SessionStart', 'UserPromptSubmit', 'Stop']);
+const EVENTS = new Set(['SessionStart', 'UserPromptSubmit']);
+/** How many later prompts re-emit the final title (VS Code may overwrite it once with its own auto-title). */
+const REASSERTS = 2;
+/** CLAUDE_CODE_ENTRYPOINT value of `claude -p` (headless) sessions. */
+const HEADLESS_ENTRYPOINT = 'sdk-cli';
 
 const output = (event, sessionTitle) => ({ hookSpecificOutput: { hookEventName: event, sessionTitle } });
 
@@ -66,6 +70,7 @@ async function run(event, input, deps = {}) {
   if (!EVENTS.has(event) || !input || typeof input !== 'object') return null;
   const env = deps.env || process.env;
   if (env.SESSION_NAMER_NESTED === '1') return null;
+  const headless = env.CLAUDE_CODE_ENTRYPOINT === HEADLESS_ENTRYPOINT;
   const cwd = typeof input.cwd === 'string' && input.cwd ? input.cwd : process.cwd();
   const git = deps.git || defaultGit(cwd);
   const now = deps.now || Date.now;
@@ -76,6 +81,7 @@ async function run(event, input, deps = {}) {
   const repoRoot = repoRootFrom(cwd, git);
   const cfg = loadConfig({ env, repoRoot });
   if (!cfg.enabled) return null;
+  if (headless && !cfg.nameHeadless) return null;
 
   const dir = state.stateDir(env);
   const log = (msg) => state.appendLog(dir, `${event} ${sessionId.slice(0, 8)} ${msg}`);
@@ -106,16 +112,25 @@ async function run(event, input, deps = {}) {
     if (command) {
       if (command.kind === 'set') {
         const full = title.formatTitle(project, command.topic, { separator: cfg.separator });
-        save({ stage: 'user', title: full, reasserted: true });
+        save({ stage: 'user', title: full });
         log(`manual "${full}"`);
         return output(event, full);
       }
       if (command.kind === 'regenerate') {
-        save({ stage: 'provisional', title: project, attempts: 0, lastAttemptTs: 0, reasserted: false });
+        save({ stage: 'provisional', title: project, attempts: 0, lastAttemptTs: 0, reasserts: 0 });
         log('re-armed by /session-name');
         return output(event, project);
       }
       return null; // --remote / --doctor: handled by the command's markdown
+    }
+    if (st && st.stage === 'final') {
+      // VS Code may overwrite the title once with its own auto-title; re-emit
+      // the final title on the next few prompts to win that race.
+      const done = st.reasserted === true ? REASSERTS : (st.reasserts || 0);
+      if (done >= REASSERTS) return null;
+      save({ reasserts: done + 1 });
+      log(`re-asserted final title (${done + 1}/${REASSERTS})`);
+      return output(event, st.title);
     }
     if (st && st.stage !== 'provisional') return null;
     if (!title.isEligiblePrompt(input.prompt)) return null;
@@ -135,16 +150,9 @@ async function run(event, input, deps = {}) {
       return null;
     }
     const full = title.formatTitle(project, topic, { separator: cfg.separator });
-    save({ stage: 'final', title: full, attempts: attempts + 1, lastAttemptTs: now(), reasserted: false });
+    save({ stage: 'final', title: full, attempts: attempts + 1, lastAttemptTs: now(), reasserts: 0 });
     log(`final "${full}"`);
     return output(event, full);
-  }
-
-  if (event === 'Stop') {
-    if (!st || st.stage !== 'final' || st.reasserted) return null;
-    save({ reasserted: true });
-    log('re-asserted final title');
-    return output(event, st.title);
   }
   return null;
 }
@@ -179,4 +187,4 @@ async function main() {
 
 if (require.main === module) main();
 
-module.exports = { run, STATE_VERSION, MAX_ATTEMPTS, RETRY_INTERVAL_MS };
+module.exports = { run, STATE_VERSION, MAX_ATTEMPTS, RETRY_INTERVAL_MS, REASSERTS };
