@@ -102,7 +102,7 @@ function child() {
   const report = { pid: process.pid, ppid: process.ppid, devTty: devTtyStatus() };
   report.wrote = osc.writeTerminalTitle(process.env.SN_PTY_TITLE);
   report.hint = process.env[osc.TTY_ENV] || null;
-  // Evidence for the ps syntax: POSIX makes everything after "=" the header.
+  // Evidence for the ps syntax: POSIX lets everything after "=" be the header.
   report.psSplit = ps(['-o', 'ppid=', '-o', 'tty=', '-p', String(process.ppid)]);
   report.psJoined = ps(['-o', 'ppid=,tty=', '-p', String(process.ppid)]);
   const w = childProcess.spawn(process.execPath, [__filename], {

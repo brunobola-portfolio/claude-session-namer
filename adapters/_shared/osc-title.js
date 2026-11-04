@@ -87,9 +87,10 @@ const TTY_DEVICE_RE = /^\/dev\/(?:pts\/\d{1,6}|tty[A-Za-z]{0,3}\d{1,6})$/;
 /**
  * POSIX: terminal device (`/dev/pts/3`, `/dev/ttys003`) of the nearest
  * ancestor of `startPid` (inclusive) that has one, or null. One
- * `ps -o ppid= -o tty= -p <pid>` per hop, no shell. Separate `-o` options:
- * POSIX makes everything after `=` the header, so `-o ppid=,tty=` may drop
- * the tty column. Bounded by `maxHops` and `budgetMs`.
+ * `ps -o ppid= -o tty= -p <pid>` per hop, no shell. Separate `-o` options
+ * because POSIX lets everything after `=` be the header; procps and macOS
+ * `ps` also accept `-o ppid=,tty=` (checked in CI). Bounded by `maxHops`
+ * and `budgetMs`.
  */
 function ancestorTtyDevice(startPid, {
   spawnSync = childProcess.spawnSync, now = Date.now, maxHops = MAX_HOPS, budgetMs = WALK_BUDGET_MS,

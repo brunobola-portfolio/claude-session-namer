@@ -28,7 +28,8 @@ title when it exits. So the hook only hands off to a worker started with
 escapes the job object that would kill it. It sets the title with
 `SetConsoleTitleW` (via `process.title`), waits until the wrapper shell has
 gone, and sets it again. On macOS and Linux the hook writes OSC 0 to
-`/dev/tty`.
+`/dev/tty`. A hook with no controlling terminal falls back to the terminal of
+its nearest parent process that has one (see the Qwen adapter).
 
 Headless runs (`gemini -p "..."`) are skipped unless `name_headless` is on.
 Gemini does not tell hooks whether it runs interactively, so the first hook of
@@ -110,7 +111,9 @@ model call failed with `API_KEY_INVALID`, while the hooks fired before it.
   after the prompt. It stayed until the end of the run.
 - With `hideWindowTitle: false`, Gemini wrote `◇  Ready (claude-session-namer)`
   and `✦  Working… (claude-session-namer)` around our titles.
-- Not verified: macOS and Linux terminals, and a signed-in session.
+- Not verified: a live Gemini session on macOS and Linux, and a signed-in
+  session. The shared OSC 0 code, including the fallback for a hook without a
+  controlling terminal, is tested on real ptys on Ubuntu and macOS in CI.
 - Headless detection only sees `-p` / `--prompt` on the command line. A prompt
   passed positionally or piped on stdin is treated as interactive.
 - Only the tab is titled; the saved session keeps Gemini's own summary.
