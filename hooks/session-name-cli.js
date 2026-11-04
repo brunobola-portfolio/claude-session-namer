@@ -15,6 +15,18 @@ const { sanitizeTopic } = require('../lib/title');
 
 const line = (status, text) => `${status.padEnd(4)} ${text}`;
 
+/** Oldest Claude Code that can set a title from SessionStart (and so run this plugin fully). */
+const MIN_CLAUDE = '2.1.152';
+
+/** -1, 0 or 1; null when either side has no X.Y.Z. */
+function compareVersions(a, b) {
+  const pa = /(\d+)\.(\d+)\.(\d+)/.exec(String(a || ''));
+  const pb = /(\d+)\.(\d+)\.(\d+)/.exec(String(b || ''));
+  if (!pa || !pb) return null;
+  for (let i = 1; i <= 3; i++) if (Number(pa[i]) !== Number(pb[i])) return Number(pa[i]) < Number(pb[i]) ? -1 : 1;
+  return 0;
+}
+
 function claudeVersion(claudePath) {
   try {
     const r = childProcess.spawnSync(claudePath.command, [...claudePath.args, '--version'], { encoding: 'utf8', timeout: 15000, windowsHide: true });
@@ -32,6 +44,9 @@ async function doctor(env = process.env) {
   const claudePath = findClaude(env);
   const version = claudeVersion(claudePath);
   out.push(line(version ? 'OK' : 'FAIL', `claude CLI: ${[claudePath.command, ...claudePath.args].join(' ')}${version ? ` -> ${version}` : ' (not runnable)'}`));
+  if (version && compareVersions(version, MIN_CLAUDE) === -1) {
+    out.push(line('WARN', `Claude Code ${MIN_CLAUDE} or newer is needed for titles at session start; update with: claude update`));
+  }
 
   const dir = stateDir(env);
   out.push(line(dir.startsWith(require('node:os').tmpdir()) ? 'WARN' : 'OK', `state dir: ${dir}`));
@@ -49,10 +64,11 @@ async function doctor(env = process.env) {
   }
 
   const started = Date.now();
-  const raw = await generateTopic({ prompt: 'Add pagination to the customers list and write tests', model: cfg.model, timeoutMs: cfg.timeoutMs, env });
+  let reason = null;
+  const raw = await generateTopic({ prompt: 'Add pagination to the customers list and write tests', model: cfg.model, timeoutMs: cfg.timeoutMs, env, log: (r) => { reason = r; } });
   const topic = sanitizeTopic(raw, { maxWords: cfg.maxWords });
   const ms = Date.now() - started;
-  out.push(line(topic ? 'OK' : 'FAIL', `dry-run generation in ${ms} ms -> ${topic ? JSON.stringify(topic) : `unusable answer ${JSON.stringify(raw)}`}`));
+  out.push(line(topic ? 'OK' : 'FAIL', `dry-run generation in ${ms} ms -> ${topic ? JSON.stringify(topic) : reason ? `failed: ${reason}` : `unusable answer ${JSON.stringify(raw)}`}`));
   return out.join('\n');
 }
 
@@ -68,4 +84,4 @@ async function main() {
 
 if (require.main === module) main();
 
-module.exports = { doctor };
+module.exports = { doctor, compareVersions, MIN_CLAUDE };

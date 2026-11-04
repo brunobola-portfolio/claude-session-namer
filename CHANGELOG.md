@@ -4,6 +4,63 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+## [1.3.0] - 2026-11-04
+
+### Added
+
+- **Codex CLI: live titles in the TUI.** With the Codex daemon running
+  (`codex app-server daemon start`), the adapter talks to it over its
+  WebSocket control socket and claims the thread as `<project>` right away,
+  so every attached TUI redraws the moment the topic lands. Without the
+  daemon, Codex titles new threads itself and session-namer leaves them alone;
+  the installer and docs now say so.
+- **Tab title on macOS and Linux for hooks started without a terminal**
+  (Qwen Code starts hooks detached): the hook finds the terminal of its
+  nearest parent process and the background worker inherits it. Proven in CI
+  on real ptys on Ubuntu and macOS.
+- **Better headless detection for Gemini CLI and Qwen Code:** a prompt given
+  as a plain command-line argument (`gemini "fix the bug"`) and `CI=true` now
+  count as headless runs.
+- One-command releases: `npm run release -- X.Y.Z` bumps every manifest and
+  install pin and dates the changelog; pushing the tag runs the new Release
+  workflow, which verifies the tag and publishes the GitHub release. Release
+  tags can only be created by the maintainer.
+- `/session-name --doctor` warns when Claude Code is older than 2.1.152 and
+  says why a dry-run generation failed (for example "Not logged in").
+
+### Fixed
+
+- **Grok Build:** a new session was never renamed, because Grok titles it at
+  once and omits `title_is_manual`. The hook now reads Grok's real payload
+  (`prompt`) and renames auto-titled sessions. Verified in the Grok TUI;
+  Grok moves from "partly verified" to beta.
+- The Claude Code plugin no longer spends a model call when Grok runs it
+  (Grok loads Claude Code plugins too).
+- **DeepSeek Harness:** a cancelled title call no longer keeps `claude -p`
+  (and `dsh headless`) running for a discarded title.
+- **Amp:** colour codes in `amp threads rename` errors no longer hide a
+  failed rename.
+- Topics cut by `max_words` no longer end on a dangling word
+  ("…expresión regular en" becomes "…expresión regular").
+- Installer: dry runs read "would create …" and end with "Dry run complete;
+  nothing was written."; `status` suggests the pinned `npx` command instead of
+  a `session-namer` binary that is not on `PATH`; a mistyped command gets a
+  suggestion; a failed `claude plugin install` shows git's real error.
+
+### Changed
+
+- The `npx` install fetches only the runtime (67 files instead of the whole
+  repository with tests and artwork), and npm no longer warns about a missing
+  `.npmignore`.
+- Every `npx` command in the docs is pinned to the release.
+- Docs say plainly what was verified where: live on Windows 11, with the full
+  test suite on Windows, macOS and Linux in CI, and which agents were checked
+  against a local stand-in model because no login was available.
+- Phone-width artwork shows the three support levels separately and uses
+  larger topic text.
+
 ## [1.2.0] - 2026-11-04
 
 ### Added

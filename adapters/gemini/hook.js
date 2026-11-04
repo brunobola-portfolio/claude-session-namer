@@ -13,7 +13,8 @@
  */
 const os = require('node:os');
 const path = require('node:path');
-const { main } = require('../_shared/tab-title-hook');
+// Shared tab-title hook plus positional-prompt and CI headless checks.
+const { main } = require('./headless-argv');
 
 function geminiHome(env = process.env) {
   const base = (env.GEMINI_CLI_HOME && env.GEMINI_CLI_HOME.trim()) || env.HOME || env.USERPROFILE || os.homedir();
@@ -29,6 +30,7 @@ const spec = (env = process.env) => ({
   script: __filename,
 });
 
-if (require.main === module) main(spec());
+// ci: Gemini itself runs headless when CI=true or GITHUB_ACTIONS=true.
+if (require.main === module) main(spec(), { ci: true });
 
 module.exports = { spec, geminiHome };

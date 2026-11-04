@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="720" height="382" viewBox="0 0 720 382" role="img" aria-label="Session title: Claude Code, Codex CLI, Pi, OpenCode, Kilo CLI, Copilot CLI, Cline CLI, Crush, goose, DeepSeek Harness. Partly verified: Amp, Grok Build. Tab title only: Gemini CLI, Qwen Code.">
-  <title>Session title: Claude Code, Codex CLI, Pi, OpenCode, Kilo CLI, Copilot CLI, Cline CLI, Crush, goose, DeepSeek Harness. Partly verified: Amp, Grok Build. Tab title only: Gemini CLI, Qwen Code.</title>
-  <rect width="720" height="382" rx="14" fill="#151A23"/>
-  <rect x="0.5" y="0.5" width="719" height="381" rx="14" fill="none" stroke="#2A3240"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="496" viewBox="0 0 720 496" role="img" aria-label="Session title: Claude Code, Codex CLI, Pi, OpenCode, Kilo CLI, Copilot CLI, Cline CLI, Crush, goose, DeepSeek Harness, Grok Build. Partly verified: Amp. Tab title only: Gemini CLI, Qwen Code.">
+  <title>Session title: Claude Code, Codex CLI, Pi, OpenCode, Kilo CLI, Copilot CLI, Cline CLI, Crush, goose, DeepSeek Harness, Grok Build. Partly verified: Amp. Tab title only: Gemini CLI, Qwen Code.</title>
+  <rect width="720" height="496" rx="14" fill="#151A23"/>
+  <rect x="0.5" y="0.5" width="719" height="495" rx="14" fill="none" stroke="#2A3240"/>
   <text x="40" y="46" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="22" fill="#98A1B3">Session title, verified live</text>
   <rect x="40" y="72" width="166" height="44" rx="22" fill="#1B212C" stroke="#2A3240"/>
   <text x="123" y="101.92" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="600" fill="#E7EAF0">Claude Code</text>
@@ -23,13 +23,14 @@
   <text x="86" y="217.92" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="600" fill="#E7EAF0">goose</text>
   <rect x="144" y="188" width="227" height="44" rx="22" fill="#1B212C" stroke="#2A3240"/>
   <text x="257.5" y="217.92" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="600" fill="#E7EAF0">DeepSeek Harness</text>
-  <text x="40" y="282" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="22" fill="#98A1B3">Partly verified, or terminal tab only</text>
+  <rect x="383" y="188" width="153" height="44" rx="22" fill="#1B212C" stroke="#2A3240"/>
+  <text x="459.5" y="217.92" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="600" fill="#E7EAF0">Grok Build</text>
+  <text x="40" y="282" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="22" fill="#98A1B3">Session title, partly verified</text>
   <rect x="40" y="302" width="67" height="44" rx="22" fill="#1B212C" stroke="#98A1B3" stroke-dasharray="4 3"/>
   <text x="73.5" y="331.92" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="600" fill="#E7EAF0">Amp</text>
-  <rect x="119" y="302" width="153" height="44" rx="22" fill="#1B212C" stroke="#98A1B3" stroke-dasharray="4 3"/>
-  <text x="195.5" y="331.92" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="600" fill="#E7EAF0">Grok Build</text>
-  <rect x="284" y="302" width="153" height="44" rx="22" fill="#1B212C" stroke="#98A1B3" stroke-dasharray="4 3"/>
-  <text x="360.5" y="331.92" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="600" fill="#E7EAF0">Gemini CLI</text>
-  <rect x="449" y="302" width="141" height="44" rx="22" fill="#1B212C" stroke="#98A1B3" stroke-dasharray="4 3"/>
-  <text x="519.5" y="331.92" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="600" fill="#E7EAF0">Qwen Code</text>
+  <text x="40" y="396" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="22" fill="#98A1B3">Terminal tab title only</text>
+  <rect x="40" y="416" width="153" height="44" rx="22" fill="#1B212C" stroke="#98A1B3" stroke-dasharray="4 3"/>
+  <text x="116.5" y="445.92" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="600" fill="#E7EAF0">Gemini CLI</text>
+  <rect x="205" y="416" width="141" height="44" rx="22" fill="#1B212C" stroke="#98A1B3" stroke-dasharray="4 3"/>
+  <text x="275.5" y="445.92" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="600" fill="#E7EAF0">Qwen Code</text>
 </svg>

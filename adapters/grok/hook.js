@@ -44,11 +44,17 @@ function readInput(raw) {
   }
 }
 
-/** Grok sends Claude-style and camelCase keys; accept both. */
+/**
+ * Grok sends camelCase keys plus Claude's snake_case aliases. Grok 1.0.70's
+ * UserPromptSubmit payload, captured live: hookEventName ("user_prompt_submit"),
+ * hook_event_name ("UserPromptSubmit"), sessionId/session_id, cwd, workspaceRoot,
+ * timestamp, transcriptPath/transcript_path, promptId, permissionMode/permission_mode
+ * and `prompt` (the only prompt field; there is no snake or camel variant).
+ */
 function normalize(input, env = process.env) {
   const ev = String(input.hook_event_name || input.hookEventName || env.GROK_HOOK_EVENT || '');
   const event = /^user_?prompt_?submit$/i.test(ev) || ev === 'UserPromptSubmit' ? 'UserPromptSubmit' : ev;
-  const prompt = [input.prompt, input.userPrompt, input.user_prompt].find((p) => typeof p === 'string') || '';
+  const prompt = typeof input.prompt === 'string' ? input.prompt : '';
   return {
     event,
     sessionId: String(input.sessionId || input.session_id || env.GROK_SESSION_ID || ''),
@@ -113,14 +119,16 @@ function readSummary(env, cwd, sessionId, { read = (p) => fs.readFileSync(p, 'ut
  * Why the session must not be renamed, or null. `listed` is the session/list
  * entry (or null), `summary` Grok's summary.json (or null), `own` the title
  * this adapter wrote earlier (if any).
- *  - title_is_manual with a title that is not ours: the user named it;
- *  - no summary (manual flag unknown) and a title that is not ours: assume
- *    the user's, since Grok's auto-title cannot be told apart.
+ *  - title_is_manual: true with a title that is not ours: the user named it.
+ *    Grok writes the flag only when it is true (a manual /rename); an
+ *    auto-titled session's summary.json has generated_title and no flag.
+ *  - no readable summary (manual flag unknown) and a title that is not ours:
+ *    assume the user's, since Grok's auto-title cannot be told apart.
  */
 function refusal({ listed, summary, own = null }) {
   const current = String((listed && listed.title) || (summary && summary.generated_title) || '').trim();
   if (!current || current === own) return null;
-  if (summary && typeof summary.title_is_manual === 'boolean') return summary.title_is_manual ? 'user' : null;
+  if (summary) return summary.title_is_manual === true ? 'user' : null;
   return 'user';
 }
 

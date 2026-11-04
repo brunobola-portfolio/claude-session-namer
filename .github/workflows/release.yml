@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: publish GitHub release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Tag matches the version in every manifest and doc
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $version"
+            exit 1
+          fi
+          node scripts/release.js --check
+
+      - name: Tag points at a commit on main
+        run: |
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main || {
+            echo "::error::$GITHUB_REF_NAME is not on main; release from a merged commit"
+            exit 1
+          }
+
+      - name: Test
+        run: node --test
+
+      - name: Publish release notes from CHANGELOG.md
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/release.js --notes > notes.md
+          cat >> notes.md <<EOF
+
+          **Install.** In Claude Code: \`/plugin marketplace add brunobola-portfolio/claude-session-namer\` then \`/plugin install session-namer@claude-session-namer\` (update with \`/plugin marketplace update claude-session-namer\`).
+          Any other agent: \`npx -y github:brunobola-portfolio/claude-session-namer#$GITHUB_REF_NAME install --detect\`.
+          EOF
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release edit "$GITHUB_REF_NAME" --notes-file notes.md
+          else
+            gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag --latest
+          fi

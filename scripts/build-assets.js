@@ -81,7 +81,7 @@ const ROWS = [
   ['Fix failing tests', 'api', 'Fix failing invoice export tests', '3m'],
   ['Fix failing tests', 'webapp', 'Fix flaky checkout e2e tests', '18m'],
   ['Migra as faturas para a V10 e valida…', 'arcva-2.0', 'Migração de faturas para V10', '1h'],
-  ['bruno-w11-graceful-unicorn', 'crm', 'Paginación en listado de clientes', '2h'],
+  ['graceful-tumbling-unicorn', 'crm', 'Paginación en listado de clientes', '2h'],
   ['Implement the changes we discussed', 'infra', 'Rotate staging TLS certificates', 'yesterday'],
 ];
 
@@ -118,7 +118,7 @@ function beforeAfter(t) {
 function flow(t) {
   const W = 1280; const H = 512;
   const steps = [
-    { n: '1', head: 'Session starts', lines: ['Title becomes the git repo name.', 'Worktree-aware. No network, 0 ms.'], tag: 'arcva-2.0' },
+    { n: '1', head: 'Session starts', lines: ['Title becomes the git repo name.', 'Worktree-aware. No network, <100 ms.'], tag: 'arcva-2.0' },
     { n: '2', head: 'First real prompt', lines: ['A fast model writes a 3 to 7 word', 'topic in your language, through', 'your own Claude login.'], tag: 'arcva-2.0 - Migração de faturas' },
     { n: '3', head: 'Next two prompts', lines: ['The title is re-asserted so the', 'VS Code sidebar cannot drift.', 'No model call.'], tag: 'arcva-2.0 - Migração de faturas' },
   ];
@@ -159,8 +159,8 @@ function flow(t) {
 
 // ---------------------------------------------------------------- harness strip + social card
 /** Support levels, as verified live. Keep in sync with docs/harnesses.md. */
-const SESSION_TITLE = ['Claude Code', 'Codex CLI', 'Pi', 'OpenCode', 'Kilo CLI', 'Copilot CLI', 'Cline CLI', 'Crush', 'goose', 'DeepSeek Harness'];
-const PARTLY = ['Amp', 'Grok Build'];
+const SESSION_TITLE = ['Claude Code', 'Codex CLI', 'Pi', 'OpenCode', 'Kilo CLI', 'Copilot CLI', 'Cline CLI', 'Crush', 'goose', 'DeepSeek Harness', 'Grok Build'];
+const PARTLY = ['Amp'];
 const TAB_TITLE = ['Gemini CLI', 'Qwen Code'];
 const HARNESSES = [...SESSION_TITLE, ...PARTLY, ...TAB_TITLE];
 
@@ -233,7 +233,7 @@ function beforeAfterNarrow(t) {
   <text x="40" y="${y + 30}" font-family="${MONO}" font-size="22" fill="${t.dim}">${esc(before.length > 34 ? `${before.slice(0, 33)}…` : before)}</text>
   <rect x="40" y="${y + 46}" width="${chipW}" height="38" rx="6" fill="${t.chip}"/>
   <text x="52" y="${y + 73}" font-family="${MONO}" font-size="24" font-weight="700" fill="${t.chipInk}" textLength="${monoWidth(project, 24)}" lengthAdjust="spacingAndGlyphs">${esc(project)}</text>
-  <text x="${40 + chipW + 12}" y="${y + 72}" font-family="${MONO}" font-size="20" fill="${t.ink}"><tspan fill="${t.muted}">- </tspan>${esc(fitMono(topic, NW - 40 - (40 + chipW + 12) - monoWidth('- ', 20), 20))}</text>
+  <text x="${40 + chipW + 12}" y="${y + 72}" font-family="${MONO}" font-size="24" fill="${t.ink}"><tspan fill="${t.muted}">- </tspan>${esc(fitMono(topic, NW - 40 - (40 + chipW + 12) - monoWidth('- ', 24), 24))}</text>
   <line x1="40" y1="${y + rowH - 4}" x2="${NW - 40}" y2="${y + rowH - 4}" stroke="${t.line}"/>`;
   });
   const body = `
@@ -264,11 +264,14 @@ function flowNarrow(t) {
 function harnessNarrow(t) {
   const a = chips(t, SESSION_TITLE, { x0: 40, y0: 72, maxW: NW - 80, size: 22, gap: 12, rowGap: 14 });
   const by = a.bottom + 70;
-  const b = chips(t, [...PARTLY, ...TAB_TITLE], { x0: 40, y0: by, maxW: NW - 80, size: 22, gap: 12, rowGap: 14, dashed: true });
-  const H = b.bottom + 36;
+  const b = chips(t, PARTLY, { x0: 40, y0: by, maxW: NW - 80, size: 22, gap: 12, rowGap: 14, dashed: true });
+  const cy = b.bottom + 70;
+  const c = chips(t, TAB_TITLE, { x0: 40, y0: cy, maxW: NW - 80, size: 22, gap: 12, rowGap: 14, dashed: true });
+  const H = c.bottom + 36;
   const body = `
   <text x="40" y="46" font-family="${SANS}" font-size="22" fill="${t.muted}">Session title, verified live</text>${a.svg}
-  <text x="40" y="${by - 20}" font-family="${SANS}" font-size="22" fill="${t.muted}">Partly verified, or terminal tab only</text>${b.svg}`;
+  <text x="40" y="${by - 20}" font-family="${SANS}" font-size="22" fill="${t.muted}">Session title, partly verified</text>${b.svg}
+  <text x="40" y="${cy - 20}" font-family="${SANS}" font-size="22" fill="${t.muted}">Terminal tab title only</text>${c.svg}`;
   return svg(NW, H, t, body, `Session title: ${SESSION_TITLE.join(', ')}. Partly verified: ${PARTLY.join(', ')}. Tab title only: ${TAB_TITLE.join(', ')}.`);
 }
 

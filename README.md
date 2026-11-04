@@ -13,12 +13,15 @@
   <img alt="Windows, macOS, Linux" src="https://img.shields.io/badge/os-Windows%20%7C%20macOS%20%7C%20Linux-2346D8">
 </p>
 
+<p align="center"><a href="README.pt.md">Português</a></p>
+
 **session-namer** gives every AI coding session a title that says which
 project it belongs to and what it is about: `webapp - Fix Safari login
 redirect loop`. It writes the title from your first real prompt, in the
-language you wrote it, and keeps it stable in the terminal, the session
-picker, VS Code and your phone. It works in Claude Code and thirteen other
-coding agents.
+language you wrote it. In Claude Code the title stays put in the terminal,
+the session picker, VS Code and on your phone. Thirteen other coding agents
+get the same kind of title through their own mechanisms (see
+[Works with](#works-with)).
 
 ## Install
 
@@ -32,16 +35,22 @@ coding agents.
 **Any supported agent**, Claude Code included, from a terminal:
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 install --detect --dry-run   # see what would change
-npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 install --detect             # set up every agent found
+# see what would change (writes nothing)
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 install --detect --dry-run
+
+# set up every supported agent found on PATH
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 install --detect
 ```
 
 `--detect` sets up every supported agent on your `PATH`; name them instead to
 be selective (`install codex pi opencode`). Most agents need nothing more. A
 few need a one-time step, which the installer prints: Codex CLI asks you to
-trust the hooks in `/hooks`, and Copilot CLI needs `/experimental on`.
-`status` shows what is installed and `uninstall` removes it. No API key, no
-account, no daemon. Details per agent are in [docs/install.md](docs/install.md).
+trust the hooks in `/hooks` and needs its own daemon for titles in the TUI
+(`codex app-server daemon start`), Copilot CLI needs `/experimental on`, and
+Grok asks once per folder to trust its hooks. `status` shows what is
+installed and `uninstall` removes it. session-namer adds no API key, no
+account and no background service of its own. Details per agent are in
+[docs/install.md](docs/install.md).
 
 **Requirements:**
 
@@ -74,7 +83,7 @@ work looks different in every tool.
   <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="docs/assets/before-after-narrow-dark.svg">
   <source media="(max-width: 600px)" srcset="docs/assets/before-after-narrow-light.svg">
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/before-after-dark.svg">
-  <img alt="Two session lists side by side. Native titles: 'Fix failing tests' twice, a truncated Portuguese prompt, 'bruno-w11-graceful-unicorn' and 'Implement the changes we discussed'. With session-namer each row starts with a yellow project chip: api, webapp, arcva-2.0, crm, infra, followed by a short topic." src="docs/assets/before-after-light.svg" width="100%">
+  <img alt="Two session lists side by side. Native titles: 'Fix failing tests' twice, a truncated Portuguese prompt, 'graceful-tumbling-unicorn' and 'Implement the changes we discussed'. With session-namer each row starts with a yellow project chip: api, webapp, arcva-2.0, crm, infra, followed by a short topic." src="docs/assets/before-after-light.svg" width="100%">
 </picture>
 
 With session-namer the project comes first, the topic is specific, and the
@@ -112,9 +121,10 @@ USD 0.004 per session, or the agent's own model where the adapter supports it.
 If a call fails, it retries at most twice more. The prompt is truncated and
 wrapped so that instructions inside it are summarised, never followed.
 
-In Claude Code the first prompt waits a few seconds while the topic is
-written, and Claude Code shows "Naming this session" meanwhile. Every later
-prompt costs under 100 ms. The design, state machine and trade-offs are in
+In Claude Code the first real prompt waits while the topic is written,
+usually 5 to 15 s (never longer than `timeout_ms`, 20 s by default), and
+Claude Code shows "Naming this session" meanwhile. Session start and every
+later prompt cost under 100 ms. The design, state machine and trade-offs are in
 [docs/architecture.md](docs/architecture.md).
 
 ## Works with
@@ -123,12 +133,13 @@ prompt costs under 100 ms. The design, state machine and trade-offs are in
   <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="docs/assets/harnesses-narrow-dark.svg">
   <source media="(max-width: 600px)" srcset="docs/assets/harnesses-narrow-light.svg">
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/harnesses-dark.svg">
-  <img alt="Session title set automatically and verified live: Claude Code, Codex CLI, Pi, OpenCode, Kilo CLI, Copilot CLI, Cline CLI, Crush, goose, DeepSeek Harness. Session title, partly verified: Amp, Grok Build. Terminal tab title only: Gemini CLI, Qwen Code." src="docs/assets/harnesses-light.svg" width="100%">
+  <img alt="Session title set automatically and verified live: Claude Code, Codex CLI, Pi, OpenCode, Kilo CLI, Copilot CLI, Cline CLI, Crush, goose, DeepSeek Harness, Grok Build. Session title, partly verified: Amp. Terminal tab title only: Gemini CLI, Qwen Code." src="docs/assets/harnesses-light.svg" width="100%">
 </picture>
 
 Claude Code is **stable**. The other adapters are **beta**: each was
-installed and tested live against a named version, and depends on agent APIs
-that are still young. Gemini CLI and Qwen Code have no way to name a session,
+installed and tested live on Windows 11 against a named version, and depends
+on agent APIs that are still young. CI runs the full test suite on Windows,
+macOS and Linux. Gemini CLI and Qwen Code have no way to name a session,
 so the title goes to the terminal tab instead of into their private files.
 Factory Droid and Cursor CLI were examined too and have no safe mechanism
 yet. The full matrix, with versions, mechanisms and caveats, is in
@@ -201,7 +212,7 @@ More detail, and how to report a vulnerability, in [SECURITY.md](SECURITY.md).
 ## Troubleshooting
 
 Run `/session-name --doctor` in Claude Code, or
-`npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 status` for any agent.
+`npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 status` for any agent.
 
 | Symptom | Likely cause | Fix |
 | :-- | :-- | :-- |
@@ -221,7 +232,7 @@ adapter's README names its own log and checks.
 /plugin marketplace remove claude-session-namer
 ```
 
-or, for any agent, `npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0
+or, for any agent, `npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0
 uninstall --all`. Titles already set stay as they are.
 
 ## Other approaches

@@ -38,6 +38,16 @@ function isCodexInput(input) {
   return typeof input.turn_id === 'string' && input.turn_id !== '' && typeof input.model === 'string';
 }
 
+/**
+ * Grok Build runs Claude Code plugins' hooks too (it finds them under
+ * ~/.claude/plugins). Its payload carries camelCase twins (`hookEventName`,
+ * `sessionId`) and `workspaceRoot`, which Claude Code never sends. Grok has its
+ * own adapter, so this plugin steps aside instead of spending a model call.
+ */
+function isGrokInput(input) {
+  return typeof input.workspaceRoot === 'string' || typeof input.hookEventName === 'string' || typeof input.promptId === 'string';
+}
+
 const output = (event, sessionTitle) => ({ hookSpecificOutput: { hookEventName: event, sessionTitle } });
 
 /**
@@ -87,7 +97,7 @@ async function run(event, input, deps = {}) {
   if (!EVENTS.has(event) || !input || typeof input !== 'object') return null;
   const env = deps.env || process.env;
   if (env.SESSION_NAMER_NESTED === '1') return null;
-  if (isCodexInput(input)) return null;
+  if (isCodexInput(input) || isGrokInput(input)) return null;
   const headless = env.CLAUDE_CODE_ENTRYPOINT === HEADLESS_ENTRYPOINT;
   const cwd = typeof input.cwd === 'string' && input.cwd ? input.cwd : process.cwd();
   const git = deps.git || defaultGit(cwd);
@@ -223,4 +233,4 @@ async function main() {
 
 if (require.main === module) main();
 
-module.exports = { run, isCodexInput, STATE_VERSION, MAX_ATTEMPTS, RETRY_INTERVAL_MS, REASSERTS };
+module.exports = { run, isCodexInput, isGrokInput, STATE_VERSION, MAX_ATTEMPTS, RETRY_INTERVAL_MS, REASSERTS };

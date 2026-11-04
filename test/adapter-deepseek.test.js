@@ -15,7 +15,14 @@ test('deepseek: provider shape and registration', async () => {
   assert.equal(mod.name, 'session-namer');
   assert.deepEqual(mod.inject, ['sessionTitle']);
   let registered = null;
-  mod.apply({ sessionTitle: { register: (p) => { registered = p; return () => {}; } } });
+  // apply() logs "provider registered" under $DSH_HOME: keep it out of the real ~/.dsh.
+  const saved = process.env.DSH_HOME;
+  process.env.DSH_HOME = require('node:fs').mkdtempSync(path.join(require('node:os').tmpdir(), 'sn-dsh-'));
+  try {
+    mod.apply({ sessionTitle: { register: (p) => { registered = p; return () => {}; } } });
+  } finally {
+    if (saved === undefined) delete process.env.DSH_HOME; else process.env.DSH_HOME = saved;
+  }
   assert.equal(registered.id, mod.PROVIDER_ID);
   assert.equal(registered.automatic, 'all-prompts');
   assert.equal(typeof registered.generate, 'function');
@@ -82,6 +89,64 @@ test('deepseek: aborted requests stop before generating', async () => {
   ac.abort();
   const p = createProvider({ make: async () => { throw new Error('must not run'); }, project });
   await assert.rejects(p.generate({ session, signal: ac.signal, messages: [{ seq: 1, text: 'Fix the login redirect loop' }] }), /aborted/);
+});
+
+test('deepseek: an abort during generation rejects at once (dsh stops waiting)', async () => {
+  const { createProvider } = await load();
+  const ac = new AbortController();
+  let finish;
+  const make = () => new Promise((resolve) => { finish = resolve; });
+  const p = createProvider({ make, project });
+  const pending = p.generate({ session, signal: ac.signal, messages: [{ seq: 8, text: 'Fix the login redirect loop' }] });
+  await new Promise((r) => { setImmediate(r); });
+  ac.abort();
+  await assert.rejects(pending, /aborted/);
+  finish({ reason: 'ok', title: 'arcva - Late topic' }); // the generator itself is not cancellable
+});
+
+test('deepseek: an abort stops the claude -p child and does not count the attempt', async () => {
+  const { createProvider } = await load();
+  const { EventEmitter } = require('node:events');
+  const spawned = [];
+  const killed = [];
+  const spawn = (cmd, args) => { const c = new EventEmitter(); c.cmd = cmd; c.args = args; spawned.push(c); return c; };
+  const kill = (c) => { killed.push(c); c.emit('close', null); };
+  // Stand-in for lib/generate.js: spawns through the provided spawn, settles on close.
+  const generate = ({ spawn: sp }) => new Promise((resolve) => { sp('claude', ['-p']).on('close', () => resolve(null)); });
+  let makes = 0;
+  const make = async ({ generate: gen }) => {
+    makes += 1;
+    if (makes > 1) return { reason: 'ok', title: 'arcva - Billing module rename' };
+    await gen({ prompt: 'x' });
+    return { reason: 'generation-failed', title: 'arcva' };
+  };
+  const t = 7_000_000;
+  const p = createProvider({ make, project, generate, spawn, kill, now: () => t });
+  const ac = new AbortController();
+  const pending = p.generate({ session, signal: ac.signal, messages: [{ seq: 8, text: 'Fix the login redirect loop' }] });
+  await new Promise((r) => { setImmediate(r); });
+  assert.equal(spawned.length, 1);
+  ac.abort();
+  await assert.rejects(pending, /aborted/);
+  assert.deepEqual(killed, spawned, 'the running claude -p is stopped');
+  // dsh's next call (newer message) generates at once: the aborted attempt was not counted.
+  const next = await p.generate({ session, signal, messages: [{ seq: 8, text: 'Fix the login redirect loop' }, { seq: 20, text: 'Rename the billing module' }] });
+  assert.deepEqual(next, { title: 'arcva - Billing module rename', messageSeqs: [20] });
+  assert.equal(makes, 2);
+});
+
+test('deepseek: killChild uses taskkill /T on Windows and kill() everywhere', async () => {
+  const { killChild } = await load();
+  const calls = [];
+  const fakeSpawn = (cmd, args) => { calls.push([cmd, ...args]); return { on: () => {} }; };
+  let killedWin = 0;
+  killChild({ pid: 42, kill: () => { killedWin += 1; } }, { platform: 'win32', spawn: fakeSpawn });
+  assert.deepEqual(calls, [['taskkill', '/T', '/F', '/PID', '42']]);
+  assert.equal(killedWin, 1);
+  let killedPosix = 0;
+  killChild({ pid: 43, kill: () => { killedPosix += 1; } }, { platform: 'linux', spawn: () => { throw new Error('no taskkill on linux'); } });
+  assert.equal(killedPosix, 1);
+  assert.doesNotThrow(() => killChild({ pid: 1, kill: () => { throw new Error('gone'); } }, { platform: 'linux' }));
 });
 
 test('deepseek: missing session cwd uses the fallback directory', async () => {

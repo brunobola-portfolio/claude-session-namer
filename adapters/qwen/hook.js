@@ -13,7 +13,9 @@
  */
 const os = require('node:os');
 const path = require('node:path');
-const { main } = require('../_shared/tab-title-hook');
+// Shared tab-title hook plus the positional-prompt headless check
+// (lives beside the Gemini adapter; Qwen has no CI rule, so ci stays off).
+const { main } = require('../gemini/headless-argv');
 
 /** $QWEN_HOME is the .qwen directory itself (default ~/.qwen). */
 function qwenHome(env = process.env) {
@@ -31,6 +33,6 @@ const spec = (env = process.env) => ({
   script: __filename,
 });
 
-if (require.main === module) main(spec());
+if (require.main === module) main(spec(), { ci: false });
 
 module.exports = { spec, qwenHome };

@@ -8,7 +8,7 @@ made.
 ## Components
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph CC["Claude Code (CLI, VS Code, Remote Control)"]
     SS["SessionStart hook"]
     UPS["UserPromptSubmit hook"]
@@ -49,7 +49,7 @@ sequenceDiagram
   You->>CC: claude (in ~/repos/arcva-2.0)
   CC->>SN: SessionStart {source: startup}
   SN-->>CC: sessionTitle "arcva-2.0"
-  Note over SN: stage = provisional, 0 ms, no network
+  Note over SN: stage = provisional, under 100 ms, no network
 
   You->>CC: "ok"
   CC->>SN: UserPromptSubmit

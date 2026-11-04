@@ -55,7 +55,7 @@ extension permission. It adds one slash command:
 Recommended, one line:
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer install copilot
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 install copilot
 ```
 
 The installer copies the runtime to `~/.session-namer/app/<version>` and writes
@@ -87,7 +87,7 @@ terminal tab shows `<project> - <topic> - GitHub Copilot`.
 ## Uninstall
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer uninstall copilot
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 uninstall copilot
 ```
 
 Or by hand: `node adapters/copilot/install.js --uninstall`. It removes

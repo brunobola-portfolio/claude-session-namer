@@ -7,7 +7,7 @@ your first real prompt. The title is stored by Grok itself, so it appears in
 
 | Tested with | OS | Date |
 | :-- | :-- | :-- |
-| Grok Build 1.0.70 (official installer) | Windows 11 | 2026-11-03 |
+| Grok Build 1.0.70 (official installer) | Windows 11 | 2026-11-04 |
 
 ## How it works
 
@@ -19,8 +19,10 @@ interface through `grok agent --no-leader stdio`:
    title, and the worker reads Grok's `summary.json` for that session
    (`title_is_manual`).
 2. If the title is manual and not the one this adapter wrote, the session is
-   yours: nothing is renamed, and the session is never touched again. If the
-   manual flag cannot be read, any title that is not ours is treated as yours.
+   yours: nothing is renamed, and the session is never touched again. Grok
+   writes `title_is_manual` only when it is true, so a `summary.json` without
+   it holds Grok's own auto-title, which is replaced. If `summary.json` cannot
+   be read at all, any title that is not ours is treated as yours.
 3. Otherwise it calls Grok's ACP extension `_x.ai/session/rename`.
 
 Why not a hook output field? Grok hooks cannot return a title. An allowing
@@ -51,15 +53,14 @@ behind `/rename` and the dashboard's Ctrl+R.
 Recommended, one line:
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer install grok
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 install grok
 ```
 
 The installer copies the runtime to `~/.session-namer/app/<version>` and writes
 `~/.grok/hooks/session-namer.json`.
 
-Manual install: create `~/.grok/hooks/session-namer.json` (global hooks are
-always trusted), with `<repo>` replaced by the absolute path of your checkout
-(forward slashes):
+Manual install: create `~/.grok/hooks/session-namer.json`, with `<repo>`
+replaced by the absolute path of your checkout (forward slashes):
 
 ```json
 {
@@ -71,7 +72,10 @@ always trusted), with `<repo>` replaced by the absolute path of your checkout
 }
 ```
 
-Restart Grok.
+Restart Grok. Grok runs your own hooks, including those in `~/.grok/hooks/`,
+only in folders you trust: the first time you open a folder, answer "Do you
+trust the contents of this directory?" with Yes. Headless runs (`grok -p`)
+count the folder as trusted for your own hooks.
 
 ## Verify
 
@@ -82,7 +86,7 @@ has a `renamed "<project> - <topic>"` line.
 ## Uninstall
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer uninstall grok
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 uninstall grok
 ```
 
 Or by hand: delete `~/.grok/hooks/session-namer.json`. Optional: delete
@@ -100,33 +104,49 @@ The shared options also apply: `CLAUDE_SESSION_NAMER=off`,
 `.session-namer.json` at the repository root.
 
 Grok also loads Claude Code hooks from `~/.claude/settings.json` by default
-(`[compat.claude] hooks = false` turns that off). The Claude Code session-namer
-plugin installs through the plugin system, not `settings.json`.
+(`[compat.claude] hooks = false` turns that off), and it discovers Claude Code
+plugins in `~/.claude/plugins`. With the Claude Code session-namer plugin
+installed, `grok inspect` lists that plugin's hooks too, so Grok runs them
+beside this adapter. They cannot title a Grok session (Grok discards a
+`UserPromptSubmit` hook's output), but they may spend an extra `claude -p`
+call (not measured). In 1.0.70, `disabled = ["session-namer"]` under `[plugins]` in
+`~/.grok/config.toml` did not remove them from `grok inspect`.
 
 ## Limitations
 
-What was verified on 2026-11-03: no grok.com sign-in or API key was available
-(`session/new` answers "Authentication required"), so no interactive turn
-could run.
+What was verified on 2026-11-04 with Grok Build 1.0.70: no grok.com sign-in or
+xAI key was available, so the interactive TUI ran against a local mock model
+endpoint (a `[model.*]` entry in `config.toml` with its own `base_url` and a
+placeholder `api_key`; Grok then shows "Logged in with API key"). The installer
+wrote the hook into a sandboxed home, and the TUI ran under ConPTY in a fresh
+git repository.
 
-- `_x.ai/session/rename` on a session that Grok had persisted answered
-  `{"success":true}` without a login. `session/list` and `grok sessions list`
-  then showed the new title, and Grok's `summary.json` read
-  `title_is_manual: true`.
-- Validation: blank title gives `title must not be blank`, unknown id gives
-  `session not found`, and the un-prefixed `x.ai/session/rename` gives
-  `Method not found`.
-- Full adapter path: a `UserPromptSubmit` payload on stdin led to the worker,
-  `claude -p`, and the rename. `grok sessions list` showed
-  `claude-session-namer - Pagination for customer list endpoint`.
-- The pre-rename read (`session/list` plus `summary.json`) was checked live
-  against that session: it returned the title and `title_is_manual: true`.
-- **Not verified:** the hook firing inside a signed-in TUI, the exact
-  `UserPromptSubmit` payload field for the prompt (the adapter accepts
-  `prompt`, `userPrompt` and `user_prompt`), and whether a live TUI session
-  that later rewrites its own `summary.json` keeps the external rename. Check
-  with `grok sessions list` after your first prompt.
-- Only Windows 11 was tested.
+- The hook fires inside the TUI. The status line read
+  `Running 2 user_prompt_submit hooks…` before the model call. The captured
+  stdin had `hookEventName`, `hook_event_name`, `sessionId`, `session_id`,
+  `cwd`, `workspaceRoot`, `timestamp`, `transcriptPath`, `transcript_path`,
+  `promptId`, `permissionMode`, `permission_mode` and `prompt`. `prompt` is
+  the only prompt field, and the adapter reads only that.
+- Grok titles a new session from the first prompt immediately
+  (`Fix the login redirect loop on Safari`). Its `summary.json` then has
+  `generated_title` and no `title_is_manual` key. The adapter replaces that
+  title. About 3 s after the prompt the log read
+  `renamed "sn-grok-e2e - Fix Safari login redirect loop"`, and
+  `grok sessions list` showed it.
+- The rename comes from a separate `grok agent` process while the TUI is
+  open. Two more turns in the same open TUI kept it: Grok's own title refresh
+  ran and its model answered another title, yet `summary.json` still read
+  `title_is_manual: true` with our title. A later `grok -p ... -r <id>` run
+  also kept it.
+- The open TUI does not reload the title. Its terminal tab keeps showing
+  Grok's first title (`<prompt> - grok`) until the session is reopened.
+  `/resume`, the dashboard list and `grok sessions list` read the stored
+  title.
+- Validation of `_x.ai/session/rename`: blank title gives
+  `title must not be blank`, unknown id gives `session not found`, and the
+  un-prefixed `x.ai/session/rename` gives `Method not found`.
+- **Not verified:** a session signed in to grok.com or using an xAI key (only
+  the model endpoint differed from that setup), and macOS and Linux.
 
 ## Log
 

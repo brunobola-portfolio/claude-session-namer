@@ -67,7 +67,7 @@ code.
 Recommended, one line:
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer install goose
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 install goose
 ```
 
 The installer copies the runtime to `~/.session-namer/app/<version>` and links
@@ -99,7 +99,7 @@ Start a new `goose session` and send a real prompt. A few seconds later
 ## Uninstall
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer uninstall goose
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 uninstall goose
 ```
 
 Or by hand, removing only the link:

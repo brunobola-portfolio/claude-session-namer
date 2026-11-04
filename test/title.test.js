@@ -105,7 +105,9 @@ test('sanitizeTopic accepts unspaced scripts (CJK, Thai) by length', () => {
 });
 
 test('sanitizeTopic honours maxWords as a cap and still rejects answers', () => {
-  assert.equal(sanitizeTopic('Add pagination to the customers list endpoint now', { maxWords: 4 }), 'Add pagination to the');
+  assert.equal(sanitizeTopic('Add pagination to the customers list endpoint now', { maxWords: 4 }), 'Add pagination');
+  assert.equal(sanitizeTopic('Explicar qué es una expresión regular en una frase', { maxWords: 7 }), 'Explicar qué es una expresión regular');
+  assert.equal(sanitizeTopic('Fix log in', { maxWords: 7 }), 'Fix log in', 'an uncut answer keeps its last word');
   assert.equal(sanitizeTopic('one two three four five six seven eight nine ten eleven twelve thirteen', { maxWords: 12 }), null);
   assert.equal(sanitizeTopic('Fix Safari login redirect loop', { maxWords: 99 }), 'Fix Safari login redirect loop');
 });

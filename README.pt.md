@@ -21,18 +21,21 @@ Migra as faturas para a V10 e…      arcva-2.0 - Migração de faturas para V10
 **Instalar em qualquer agente suportado** (num terminal):
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 install --detect --dry-run   # mostra o que vai mudar
-npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 install --detect
+# mostra o que vai mudar (não escreve nada)
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 install --detect --dry-run
+
+# configura todos os agentes suportados encontrados no PATH
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 install --detect
 ```
 
-O `--detect` configura todos os agentes suportados que estiverem no `PATH`. A maioria não precisa de mais nada; o instalador indica os passos únicos de alguns (no Codex CLI, confiar nos hooks em `/hooks`; no Copilot CLI, `/experimental on`). `status` mostra o que está instalado e `uninstall` desfaz tudo.
+O `--detect` configura todos os agentes suportados que estiverem no `PATH`. A maioria não precisa de mais nada; o instalador indica os passos únicos de alguns (no Codex CLI, confiar nos hooks em `/hooks` e arrancar o daemon com `codex app-server daemon start` para ver o título na TUI; no Copilot CLI, `/experimental on`; no Grok, confiar nos hooks uma vez por pasta). `status` mostra o que está instalado e `uninstall` desfaz tudo.
 
-**Requisitos:** Node.js 18 ou superior; Claude Code 2.1.152 ou superior para o plugin; o `claude` CLI com sessão iniciada, que escreve o assunto na maioria dos agentes (o Pi, o OpenCode e o Kilo CLI podem usar o seu próprio modelo, e o Codex CLI também, se o ativares).
+**Requisitos:** Node.js 18 ou superior; Claude Code 2.1.152 ou superior para o plugin; o `claude` CLI com sessão iniciada, que escreve o assunto na maioria dos agentes (o Pi, o OpenCode e o Kilo CLI podem usar o seu próprio modelo, e o Codex CLI também, se o ativares; o OpenCode, o Crush e o goose usam o próprio título se o `claude` faltar).
 
 **Agentes suportados:**
 
-- Título automático da sessão, verificado ao vivo: Claude Code, Codex CLI, Pi, OpenCode, Kilo CLI, Copilot CLI, Cline CLI, Crush, goose e DeepSeek Harness.
-- Título automático, parcialmente verificado: Amp e Grok Build.
+- Título automático da sessão, verificado ao vivo: Claude Code, Codex CLI, Pi, OpenCode, Kilo CLI, Copilot CLI, Cline CLI, Crush, goose, DeepSeek Harness e Grok Build.
+- Título automático, parcialmente verificado: Amp.
 - Só o título do separador do terminal: Gemini CLI e Qwen Code.
 
 O Claude Code é estável; os restantes adaptadores estão em beta. A matriz completa está em [docs/harnesses.md](docs/harnesses.md).
@@ -44,7 +47,7 @@ O Claude Code é estável; os restantes adaptadores estão em beta. A matriz com
 | Comando | Efeito |
 | :-- | :-- |
 | `/session-name Nome que eu quero` | Renomeia já para `<projeto> - Nome que eu quero` e bloqueia-o |
-| `/session-name` | Volta ao nome do projeto e gera um assunto novo na próxima mensagem |
+| `/session-name` ou `/session-name --regenerate` | Volta ao nome do projeto e gera um assunto novo na próxima mensagem |
 | `/session-name --remote` | Explica como continuar a sessão no telemóvel ou no browser |
 | `/session-name --doctor` | Diagnóstico completo |
 

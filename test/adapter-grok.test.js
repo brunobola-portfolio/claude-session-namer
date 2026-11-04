@@ -19,11 +19,29 @@ const project = () => ({ cfg: { enabled: true }, project: 'arcva' });
 const SID = '01a1a38b-7740-7f71-9f63-ec8405d8c4b4';
 const payload = (extra = {}) => ({ hook_event_name: 'UserPromptSubmit', hookEventName: 'user_prompt_submit', sessionId: SID, cwd: '/repos/arcva', prompt: 'Fix the login redirect loop on Safari', ...extra });
 
-test('grok: normalize accepts Claude-style and camelCase keys', () => {
-  const n = grok.normalize({ hookEventName: 'user_prompt_submit', session_id: 'abc', userPrompt: 'hello there friend' }, {});
+/** UserPromptSubmit stdin as Grok 1.0.70 sent it from a live TUI session (paths shortened). */
+const CAPTURED_PROMPT_SUBMIT = {
+  hookEventName: 'user_prompt_submit', sessionId: '01a1a4fa-f17c-76c0-b772-20311667ab06',
+  cwd: 'C:\\repos\\sn-grok-e2e', workspaceRoot: 'C:\\repos\\sn-grok-e2e', timestamp: '2026-11-04T05:14:42.178804300+00:00',
+  transcriptPath: 'C:/g/.grok\\sessions\\C%3A%5Crepos%5Csn-grok-e2e\\01a1a4fa-f17c-76c0-b772-20311667ab06\\updates.jsonl',
+  promptId: 'da3da594-8719-4499-a1f3-456ac99cdf29', permissionMode: 'default', prompt: 'Fix the login redirect loop on Safari',
+  hook_event_name: 'UserPromptSubmit', session_id: '01a1a4fa-f17c-76c0-b772-20311667ab06',
+  transcript_path: 'C:/g/.grok\\sessions\\C%3A%5Crepos%5Csn-grok-e2e\\01a1a4fa-f17c-76c0-b772-20311667ab06\\updates.jsonl',
+  permission_mode: 'default',
+};
+
+test('grok: normalize reads the payload Grok 1.0.70 sends (captured live)', () => {
+  const n = grok.normalize(CAPTURED_PROMPT_SUBMIT, {});
   assert.equal(n.event, 'UserPromptSubmit');
-  assert.equal(n.sessionId, 'abc');
-  assert.equal(n.prompt, 'hello there friend');
+  assert.equal(n.sessionId, '01a1a4fa-f17c-76c0-b772-20311667ab06');
+  assert.equal(n.cwd, 'C:\\repos\\sn-grok-e2e');
+  assert.equal(n.prompt, 'Fix the login redirect loop on Safari');
+  assert.equal(n.subagent, false);
+  // `prompt` is the only prompt field Grok sends; guessed variants are not read.
+  assert.equal(grok.normalize({ hookEventName: 'user_prompt_submit', session_id: 'abc', userPrompt: 'hello there friend' }, {}).prompt, '');
+  const camel = grok.normalize({ hookEventName: 'user_prompt_submit', session_id: 'abc', prompt: 'hello there friend' }, {});
+  assert.equal(camel.event, 'UserPromptSubmit');
+  assert.equal(camel.sessionId, 'abc');
   const fromEnv = grok.normalize({}, { GROK_SESSION_ID: 'envsid', GROK_HOOK_EVENT: 'user_prompt_submit', GROK_WORKSPACE_ROOT: '/w' });
   assert.equal(fromEnv.sessionId, 'envsid');
   assert.equal(fromEnv.cwd, '/w');
@@ -170,8 +188,29 @@ test('grok: refusal honours title_is_manual and our own earlier title', () => {
   assert.equal(grok.refusal({ listed: { title: 'Release prep' }, summary: { title_is_manual: true } }), 'user');
   assert.equal(grok.refusal({ listed: { title: 'Grok auto title' }, summary: { title_is_manual: false } }), null);
   assert.equal(grok.refusal({ listed: { title: 'arcva - Old' }, summary: { title_is_manual: true }, own: 'arcva - Old' }), null);
-  // Manual flag unknown: a title that is not ours is assumed to be the user's.
+  // Grok omits title_is_manual unless it is true: an auto-titled session (live 1.0.70 summary.json).
+  assert.equal(grok.refusal({ listed: { title: 'Fix the login redirect loop on Safari' }, summary: { generated_title: 'Fix the login redirect loop on Safari', session_summary: 'Fix the login redirect loop on Safari' } }), null);
+  // Manual flag unknown (summary.json unreadable): a title that is not ours is assumed to be the user's.
   assert.equal(grok.refusal({ listed: { title: 'Something' }, summary: null }), 'user');
+});
+
+test('grok: worker renames a session that only has Grok\'s own auto-title', async () => {
+  const env = tmpEnv();
+  const sdir = path.join(env.GROK_HOME, 'sessions', encodeURIComponent('/repos/arcva'), SID);
+  fs.mkdirSync(sdir, { recursive: true });
+  // What Grok 1.0.70 wrote right after the first turn: no title_is_manual key at all.
+  fs.writeFileSync(path.join(sdir, 'summary.json'), JSON.stringify({ info: { id: SID, cwd: '/repos/arcva' }, session_summary: 'Fix the login redirect loop on Safari', generated_title: 'Fix the login redirect loop on Safari', num_messages: 5 }));
+  let renamed = null;
+  const make = async () => ({ reason: 'ok', title: 'arcva - Safari login redirect loop' });
+  const rename = async ({ check, title: t }) => {
+    const why = check({ sessionId: SID, cwd: '/repos/arcva', title: 'Fix the login redirect loop on Safari' });
+    if (why) return { ok: false, skipped: why, title: 'Fix the login redirect loop on Safari' };
+    renamed = t;
+    return { ok: true };
+  };
+  const r = await grok.runWorker({ sessionId: SID, cwd: '/repos/arcva', prompt: 'x' }, { env, make, rename });
+  assert.deepEqual(r, { ok: true, title: 'arcva - Safari login redirect loop' });
+  assert.equal(renamed, 'arcva - Safari login redirect loop');
 });
 
 test('grok: worker never renames a session the user already named', async () => {

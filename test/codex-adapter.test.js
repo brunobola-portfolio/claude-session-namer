@@ -21,7 +21,8 @@ function fakeSpawn(script) {
     child.stderr = new EventEmitter();
     child.stdin = Object.assign(new EventEmitter(), {
       written: '',
-      write(data) { this.written += data; this.emit('chunk', String(data)); return true; },
+      chunks: [], // raw writes (Buffers stay binary: WebSocket frames)
+      write(data) { this.written += String(data); this.chunks.push(data); this.emit('chunk', data); return true; },
       end(data) { if (data) this.written += data; },
     });
     child.pid = 0; // keeps killTree away from taskkill
@@ -39,7 +40,7 @@ function fakeSpawn(script) {
 function fakeAppServer(handlers, seen = []) {
   return (child) => {
     const onData = (data) => {
-      for (const line of data.split('\n').filter(Boolean)) {
+      for (const line of String(data).split('\n').filter(Boolean)) {
         const msg = JSON.parse(line);
         seen.push(msg);
         if (msg.id === undefined) continue;
@@ -51,6 +52,66 @@ function fakeAppServer(handlers, seen = []) {
     };
     child.stdin.on('chunk', onData);
     if (child.stdin.written) onData(child.stdin.written); // requests written before we attached
+  };
+}
+
+/** Unmasked server frame; fin=false starts or continues a fragmented message. */
+function serverFrame(payload, opcode = 1, fin = true) {
+  const data = Buffer.from(payload);
+  const b0 = (fin ? 0x80 : 0) | opcode;
+  if (data.length < 126) return Buffer.concat([Buffer.from([b0, data.length]), data]);
+  const head = Buffer.from([b0, 126, 0, 0]);
+  head.writeUInt16BE(data.length, 2);
+  return Buffer.concat([head, data]);
+}
+
+/** Decode one masked client frame (the client writes exactly one frame per write). */
+function clientFrame(buf) {
+  assert.ok(buf[1] & 0x80, 'client frames must be masked');
+  let len = buf[1] & 0x7f;
+  let off = 2;
+  if (len === 126) { len = buf.readUInt16BE(2); off = 4; }
+  const mask = buf.slice(off, off + 4);
+  const body = Buffer.from(buf.slice(off + 4, off + 4 + len).map((b, i) => b ^ mask[i % 4]));
+  return { fin: (buf[0] & 0x80) !== 0, opcode: buf[0] & 0x0f, text: body.toString('utf8') };
+}
+
+/**
+ * A fake `codex app-server proxy` talking to the daemon's WebSocket control
+ * socket: checks the upgrade request, answers 101, then JSON-RPC over frames.
+ * It pings right after the upgrade and fragments + splits the thread/read reply.
+ */
+function fakeWsAppServer(handlers, seen = { requests: [], frames: [], handshake: null }) {
+  return (child) => {
+    const onData = (data) => {
+      const buf = Buffer.isBuffer(data) ? data : Buffer.from(String(data), 'latin1');
+      if (!seen.handshake) {
+        seen.handshake = buf.toString('latin1');
+        const key = (seen.handshake.match(/^Sec-WebSocket-Key: (\S+)/im) || [])[1];
+        const accept = require('node:crypto').createHash('sha1').update(`${key}258EAFA5-E914-47DA-95CA-C5AB0DC85B11`).digest('base64');
+        child.stdout.emit('data', Buffer.concat([
+          Buffer.from(`HTTP/1.1 101 Switching Protocols\r\nupgrade: websocket\r\nconnection: Upgrade\r\nsec-websocket-accept: ${accept}\r\n\r\n`, 'latin1'),
+          serverFrame('hi', 9), // ping in the same chunk as the 101
+        ]));
+        return;
+      }
+      const frame = clientFrame(buf);
+      seen.frames.push(frame.opcode);
+      if (frame.opcode !== 1) return;
+      const msg = JSON.parse(frame.text);
+      seen.requests.push(msg);
+      if (msg.id === undefined) return;
+      const h = handlers[msg.method];
+      const reply = h ? h(msg.params) : { error: { message: `unknown ${msg.method}` } };
+      const out = JSON.stringify(reply && reply.error ? { id: msg.id, error: reply.error } : { id: msg.id, result: reply });
+      child.stdout.emit('data', serverFrame('{"method":"account/updated","params":{}}'));
+      if (msg.method !== 'thread/read') { child.stdout.emit('data', serverFrame(out)); return; }
+      const bytes = Buffer.concat([serverFrame(out.slice(0, 10), 1, false), serverFrame(out.slice(10), 0, true)]);
+      child.stdout.emit('data', bytes.slice(0, 7));
+      child.stdout.emit('data', bytes.slice(7));
+    };
+    child.stdin.on('chunk', onData);
+    for (const c of child.stdin.chunks.slice()) onData(c); // written before we attached
   };
 }
 
@@ -143,7 +204,7 @@ test('withAppServer: initialize handshake, then the script, over stdio', async (
     },
   });
   assert.equal(res.ok, true);
-  assert.deepEqual(res.value, { name: null, source: 'cli', ephemeral: false, parentThreadId: null });
+  assert.deepEqual(res.value, { name: null, source: 'cli', ephemeral: false, parentThreadId: null, loaded: null });
   assert.deepEqual(spawn.calls[0].args, ['app-server']);
   assert.equal(spawn.calls[0].options.env.SESSION_NAMER_NESTED, '1');
   assert.deepEqual(seen.map((m) => m.method), ['initialize', 'initialized', 'thread/read', 'thread/name/set']);
@@ -168,6 +229,71 @@ test('callAppServer falls back from the daemon proxy to a private server', async
   assert.equal(res.mode, 'stdio');
   assert.deepEqual(spawn.calls.map((c) => c.args), [['app-server', 'proxy'], ['app-server']]);
   assert.match(logs[0], /proxy/);
+});
+
+test('WebSocket frames: masked encode, decode across chunks, 16-bit lengths, fragments', () => {
+  const mask = Buffer.from([1, 2, 3, 4]);
+  const frame = appServer.encodeFrame('{"id":1}', 1, mask);
+  assert.deepEqual([...frame.slice(0, 6)], [0x81, 0x80 | 8, 1, 2, 3, 4]);
+  assert.equal(clientFrame(frame).text, '{"id":1}');
+  const long = 'x'.repeat(300);
+  assert.equal(clientFrame(appServer.encodeFrame(long)).text, long);
+  const dec = appServer.createFrameDecoder();
+  const bytes = Buffer.concat([serverFrame('ab', 1, false), serverFrame('cd', 0, true), serverFrame(long), serverFrame('', 9)]);
+  const out = [];
+  for (let i = 0; i < bytes.length; i += 5) out.push(...dec.push(bytes.slice(i, i + 5)));
+  assert.deepEqual(out.map((m) => [m.opcode, m.payload.toString()]), [[1, 'abcd'], [1, long], [9, '']]);
+  assert.deepEqual(dec.push(appServer.encodeFrame('masked')).map((m) => m.payload.toString()), ['masked'], 'masked frames decode too');
+});
+
+test('withAppServer proxy: WebSocket upgrade to /rpc, JSON-RPC in frames, pong, fragmented replies', async () => {
+  const seen = { requests: [], frames: [], handshake: null };
+  const spawn = fakeSpawn(fakeWsAppServer({
+    initialize: () => ({ userAgent: 'x' }),
+    'thread/read': () => ({ thread: { id: 't1', name: null, source: 'vscode', ephemeral: false, status: { type: 'idle' } } }),
+    'thread/name/set': () => ({}),
+  }, seen));
+  const res = await appServer.withAppServer({
+    codex: { command: 'codex', args: [] }, mode: 'proxy', spawn,
+    script: async (request, conn) => {
+      const t = await appServer.readThread(request, 't1');
+      await appServer.setThreadName(request, 't1', 'repo - Topic here');
+      return { t, mode: conn.mode };
+    },
+  });
+  assert.equal(res.ok, true, res.error);
+  assert.deepEqual(res.value, { t: { name: null, source: 'vscode', ephemeral: false, parentThreadId: null, loaded: true }, mode: 'proxy' });
+  assert.deepEqual(spawn.calls[0].args, ['app-server', 'proxy']);
+  assert.match(seen.handshake, /^GET \/rpc HTTP\/1\.1\r\n/);
+  assert.match(seen.handshake, /\r\nUpgrade: websocket\r\n/);
+  assert.match(seen.handshake, /\r\nSec-WebSocket-Version: 13\r\n\r\n$/);
+  assert.ok(seen.frames.includes(10), 'answers the ping with a pong');
+  assert.deepEqual(seen.requests.map((m) => m.method), ['initialize', 'initialized', 'thread/read', 'thread/name/set']);
+  assert.deepEqual(seen.requests[3].params, { threadId: 't1', name: 'repo - Topic here' });
+});
+
+test('withAppServer proxy: a non-WebSocket answer fails fast, then the private server is used', async () => {
+  const spawn = fakeSpawn((child, call) => {
+    if (!call.args.includes('proxy')) { fakeAppServer({ initialize: () => ({}), 'thread/name/set': () => ({}) })(child); return; }
+    child.stdin.on('chunk', () => {});
+    setImmediate(() => child.stdout.emit('data', Buffer.from('{"error":{"message":"parse error"}}\n')));
+  });
+  const t0 = Date.now();
+  const res = await appServer.callAppServer({
+    codex: { command: 'codex', args: [] }, spawn, timeoutMs: 5000, log: () => {},
+    script: (request) => appServer.setThreadName(request, 't1', 'n'),
+  });
+  assert.equal(res.ok, true);
+  assert.equal(res.mode, 'stdio');
+  assert.ok(Date.now() - t0 < 2000, 'no wait for the timeout');
+});
+
+test('readThread maps status to loaded: notLoaded=false, idle/active=true, missing=null', async () => {
+  const read = (status) => appServer.readThread(async () => ({ thread: { id: 't', name: 'n', status } }), 't');
+  assert.equal((await read({ type: 'notLoaded' })).loaded, false);
+  assert.equal((await read({ type: 'idle' })).loaded, true);
+  assert.equal((await read({ type: 'active', activeFlags: [] })).loaded, true);
+  assert.equal((await read(undefined)).loaded, null);
 });
 
 test('withAppServer: RPC errors and timeouts resolve with ok=false', async () => {
@@ -271,7 +397,7 @@ test('readSessionMeta reads source/originator from the rollout head', () => {
 // ---------------------------------------------------------------- worker
 
 /** Worker deps with an in-memory thread and a scripted app server. */
-function workerDeps({ thread = { name: null, source: 'cli', ephemeral: false, parentThreadId: null }, topic = 'Migração de faturas para V10', claudeTopic = 'Tópico via Claude agora', env = {}, renameBeforeSet = null } = {}) {
+function workerDeps({ thread = { name: null, source: 'cli', ephemeral: false, parentThreadId: null }, topic = 'Migração de faturas para V10', claudeTopic = 'Tópico via Claude agora', env = {}, renameBeforeSet = null, mode = 'stdio' } = {}) {
   const home = tmp();
   const calls = { reads: 0, sets: [], generate: [], claude: [] };
   const live = { ...thread };
@@ -293,7 +419,7 @@ function workerDeps({ thread = { name: null, source: 'cli', ephemeral: false, pa
       now: () => 1_700_000_000_000,
       codex: { command: 'codex', args: [] },
       callAppServer: async ({ script }) => {
-        try { return { ok: true, value: await script(request), mode: 'stdio' }; } catch (err) { return { ok: false, error: err.message }; }
+        try { return { ok: true, value: await script(request, { mode }), mode }; } catch (err) { return { ok: false, error: err.message }; }
       },
       generateCodex: async (opts) => { calls.generate.push(opts); return topic; },
       generateClaude: async (opts) => { calls.claude.push(opts); return claudeTopic; },
@@ -366,6 +492,58 @@ test('worker: SESSION_NAMER_CODEX_GENERATOR=codex opts in to codex exec; auto = 
   await hook.worker(job, only.deps);
   assert.equal(only.calls.generate.length, 0);
   assert.equal(only.calls.claude.length, 1);
+});
+
+// Codex 0.163+ TUIs title a new thread themselves ~2 s after the first prompt
+// unless it already has a name; the claim is how we get there first.
+const inDaemon = { name: null, source: 'vscode', ephemeral: false, parentThreadId: null, status: { type: 'idle' } };
+
+test('worker: a thread running in the daemon is claimed with "<project>" first, then named', async () => {
+  const w = workerDeps({ thread: inDaemon, mode: 'proxy', claudeTopic: 'Migração de faturas para V10' });
+  const res = await hook.worker(job, w.deps);
+  assert.deepEqual(res, { ok: true, title: 'arcva-2.0 - Migração de faturas para V10' });
+  assert.deepEqual(w.calls.sets.map((s) => s.name), ['arcva-2.0', 'arcva-2.0 - Migração de faturas para V10']);
+  assert.equal(readState(w.dir, 'thr1').stage, 'final');
+});
+
+test('worker: once claimed, Codex\'s own title can no longer land (it only titles unnamed threads)', async () => {
+  const w = workerDeps({ thread: inDaemon, mode: 'proxy' });
+  let codexTitleApplied = false;
+  w.deps.generateClaude = async () => {
+    // What the TUI does when its own title is ready: thread/read, set only if unnamed.
+    if (!w.live.name) { w.live.name = 'Explain regex basics'; codexTitleApplied = true; }
+    return 'Regex in one sentence';
+  };
+  const res = await hook.worker(job, w.deps);
+  assert.equal(codexTitleApplied, false);
+  assert.equal(res.title, 'arcva-2.0 - Regex in one sentence');
+});
+
+test('worker: no claim on the private server or for a thread the daemon does not run', async () => {
+  for (const [thread, mode] of [[inDaemon, 'stdio'], [{ ...inDaemon, status: { type: 'notLoaded' } }, 'proxy'], [{ ...inDaemon, status: undefined }, 'proxy']]) {
+    const w = workerDeps({ thread, mode });
+    const res = await hook.worker(job, w.deps);
+    assert.equal(res.ok, true);
+    assert.equal(w.calls.sets.length, 1, `${mode} ${JSON.stringify(thread.status)}`);
+  }
+  assert.equal(hook.shouldClaim({ ...inDaemon, loaded: true, name: 'x' }, { mode: 'proxy' }, {}), false, 'never over a name');
+  assert.equal(hook.shouldClaim({ ...inDaemon, loaded: true }, { mode: 'proxy' }, { title: 'arcva-2.0' }), false, 'claimed already');
+});
+
+test('worker: a claimed thread whose topic failed keeps "<project>" and is named on a later attempt', async () => {
+  const w = workerDeps({ thread: inDaemon, mode: 'proxy', claudeTopic: '  ' });
+  assert.equal((await hook.worker(job, w.deps)).why, 'generation failed');
+  const st = readState(w.dir, 'thr1');
+  assert.deepEqual([st.stage, st.title, w.live.name], ['provisional', 'arcva-2.0', 'arcva-2.0']);
+  w.deps.generateClaude = async () => 'Segunda tentativa ok';
+  const res = await hook.worker(job, w.deps);
+  assert.equal(res.title, 'arcva-2.0 - Segunda tentativa ok');
+});
+
+test('worker: a name that beat the claim (Codex or /rename) still wins', async () => {
+  const w = workerDeps({ thread: { ...inDaemon, name: 'Explain regex basics' }, mode: 'proxy' });
+  assert.equal((await hook.worker(job, w.deps)).why, 'user');
+  assert.equal(w.calls.sets.length, 0);
 });
 
 test('worker: our own earlier title is not mistaken for a user name', async () => {

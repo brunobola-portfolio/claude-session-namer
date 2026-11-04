@@ -69,6 +69,26 @@ test('qwen (posix): no console resolution, title written directly', async () => 
   assert.deepEqual(writes, ['arcva']);
 });
 
+test('qwen (win32): `qwen "<prompt>"` (positional, non-interactive) is skipped; typed prompts still generate', async () => {
+  const argvHeadless = require('../adapters/gemini/headless-argv');
+  const hookLine = 'node "C:/Users/me/.session-namer/app/1.2.0/adapters/qwen/hook.js"';
+  const prompt = 'Fix the login redirect loop on Safari';
+  const run = async (agentLine) => {
+    const spec = tmpSpec();
+    const jobs = [];
+    const opts = {
+      platform: 'win32', ci: false, env: { CI: 'true' }, getLines: () => [hookLine, agentLine],
+      deps: { project, ppid: 111, now: 10, resolveOwner: () => 9999, spawnJob: async (j) => { jobs.push(j); return true; } },
+    };
+    const start = await argvHeadless.handleHook(spec, input('SessionStart', { source: 'startup' }), opts);
+    const submit = await argvHeadless.handleHook(spec, input('UserPromptSubmit', { prompt_id: 'q-1########1', prompt, submitted_prompt: prompt }), opts);
+    return { start: start.action, submit: submit.action, generated: jobs.some((j) => j.prompt) };
+  };
+  assert.deepEqual(await run(`"C:\\Program Files\\nodejs\\node.exe" C:\\npm\\node_modules\\@qwen-code\\qwen-code\\cli.js "${prompt}"`), { start: 'title', submit: 'skip-headless', generated: false });
+  assert.deepEqual(await run('"C:\\Program Files\\nodejs\\node.exe" C:\\npm\\node_modules\\@qwen-code\\qwen-code\\cli.js --yolo'), { start: 'title', submit: 'generating', generated: true });
+  assert.deepEqual(await run(`node C:\\npm\\node_modules\\@qwen-code\\qwen-code\\cli.js -i "${prompt}"`), { start: 'title', submit: 'generating', generated: true });
+});
+
 test('qwen: worker writes through the ancestor console when the job carries startPid', async () => {
   const spec = tmpSpec();
   const titles = [];
