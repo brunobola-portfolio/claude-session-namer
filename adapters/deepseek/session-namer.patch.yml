@@ -1,0 +1,16 @@
+# session-namer overlay for DeepSeek Harness profiles built on @deepseek-ai/dsh-base.
+# Use per run:   dsh <profile> --patch <this file>
+# Or install:    see README.md (copies these rows into the profile's cordis.patch.yml).
+
+# dsh allows one title provider: turn off the shipped first-prompt LLM provider.
+- id: session-title-llm
+  disabled: true
+# Room for "<project> - <topic>" in non-ASCII languages (config is replaced wholesale).
+- id: session-title
+  config:
+    fallbackMaxWords: 5
+    fallbackMaxBytes: 40
+    maxTitleBytes: 160
+- insert:
+    - id: session-namer
+      name: ./plugin.mjs

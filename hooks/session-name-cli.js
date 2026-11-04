@@ -50,7 +50,7 @@ async function doctor(env = process.env) {
 
   const started = Date.now();
   const raw = await generateTopic({ prompt: 'Add pagination to the customers list and write tests', model: cfg.model, timeoutMs: cfg.timeoutMs, env });
-  const topic = sanitizeTopic(raw);
+  const topic = sanitizeTopic(raw, { maxWords: cfg.maxWords });
   const ms = Date.now() - started;
   out.push(line(topic ? 'OK' : 'FAIL', `dry-run generation in ${ms} ms -> ${topic ? JSON.stringify(topic) : `unusable answer ${JSON.stringify(raw)}`}`));
   return out.join('\n');

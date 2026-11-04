@@ -9,6 +9,8 @@ const { run } = require('../hooks/namer');
 const { readState, writeState } = require('../lib/state');
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'namer-run-'));
+/** process.env without anything that would change the plugin's behaviour on a dev machine. */
+const cleanEnv = () => Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^(SESSION_NAMER_|CLAUDE_SESSION_NAMER|CLAUDE_PLUGIN_OPTION_|CLAUDE_CODE_ENTRYPOINT|CLAUDE_CODE_EXECPATH)/.test(k)));
 
 /** Deps with a temp state dir, no git, and a stubbed generator. */
 function makeDeps({ topic = 'Migração de faturas para V10', env = {}, generateCalls = [] } = {}) {
@@ -80,6 +82,42 @@ test('first eligible prompt produces the final title and records it', async () =
   assert.equal(r2.hookSpecificOutput.sessionTitle, 'arcva-2.0 - Migração de faturas para V10');
   assert.equal(await run('UserPromptSubmit', prompt('Mais uma tarefa qualquer aqui'), deps), null);
   assert.equal(generateCalls.length, 1); // never another model call
+});
+
+test('a /rename after the automatic title is never overwritten by re-assertion', async () => {
+  const { dir, deps, generateCalls } = makeDeps();
+  await run('SessionStart', startup(), deps);
+  await run('UserPromptSubmit', prompt('Migra as faturas para a V10 e valida os testes'), deps);
+  // User runs /rename: Claude Code now reports that custom title on every prompt.
+  const renamed = { session_title: 'O meu nome' };
+  assert.equal(await run('UserPromptSubmit', prompt('Continua com a parte dos testes', renamed), deps), null);
+  assert.equal(readState(dir, 's1').stage, 'user');
+  assert.equal(await run('UserPromptSubmit', prompt('Mais uma tarefa qualquer aqui', renamed), deps), null);
+  assert.equal(generateCalls.length, 1);
+});
+
+test('a custom title set before the first prompt is respected without a model call', async () => {
+  const { deps, generateCalls } = makeDeps();
+  const out = await run('UserPromptSubmit', prompt('Migra as faturas para a V10 e valida os testes', { session_title: 'feature-x' }), deps);
+  assert.equal(out, null);
+  assert.equal(generateCalls.length, 0);
+});
+
+test('our own title echoed back as session_title does not count as a user rename', async () => {
+  const { dir, deps } = makeDeps();
+  await run('SessionStart', startup(), deps);
+  const first = await run('UserPromptSubmit', prompt('Migra as faturas para a V10 e valida os testes', { session_title: 'arcva-2.0' }), deps);
+  assert.equal(first.hookSpecificOutput.sessionTitle, 'arcva-2.0 - Migração de faturas para V10');
+  const echo = { session_title: 'arcva-2.0 - Migração de faturas para V10' };
+  const again = await run('UserPromptSubmit', prompt('Agora corrige os testes que falharam', echo), deps);
+  assert.equal(again.hookSpecificOutput.sessionTitle, 'arcva-2.0 - Migração de faturas para V10');
+  assert.equal(readState(dir, 's1').stage, 'final');
+});
+
+test('/session-name still works when a custom title is present', async () => {
+  const { deps } = makeDeps();
+  const out = await run('UserPromptSubmit', prompt('/session-name Novo nome', { session_title: 'Antigo' }), deps);
+  assert.equal(out.hookSpecificOutput.sessionTitle, 'arcva-2.0 - Novo nome');
 });
 
 test('legacy state with reasserted:true never re-asserts again', async () => {
@@ -178,7 +216,7 @@ test('/session-name --remote and --doctor are left to the command markdown', asy
 test('doctor prints checks and a dry-run using the fake result', async () => {
   const { doctor } = require('../hooks/session-name-cli');
   const cfgDir = tmp();
-  const report = await doctor({ ...process.env, CLAUDE_CONFIG_DIR: cfgDir, SESSION_NAMER_FAKE_RESULT: 'Paginação na lista de clientes' });
+  const report = await doctor({ ...cleanEnv(), CLAUDE_CONFIG_DIR: cfgDir, SESSION_NAMER_FAKE_RESULT: 'Paginação na lista de clientes', SESSION_NAMER_CLAUDE_PATH: path.join(cfgDir, 'no-such-claude') });
   assert.match(report, /^OK {3}Node\.js/m);
   assert.match(report, /claude CLI:/);
   assert.match(report, /state dir: /);
@@ -200,16 +238,16 @@ test('config: separator, project override via repo file and cwd source', async (
 test('CLI wrapper: malformed stdin exits 0 with empty stdout; valid input prints JSON', () => {
   const script = path.join(__dirname, '..', 'hooks', 'namer.js');
   const dir = tmp();
-  const bad = spawnSync(process.execPath, [script, 'SessionStart'], { input: '{nope', env: { ...process.env, CLAUDE_CONFIG_DIR: dir } });
+  const bad = spawnSync(process.execPath, [script, 'SessionStart'], { input: '{nope', env: { ...cleanEnv(), CLAUDE_CONFIG_DIR: dir } });
   assert.equal(bad.status, 0);
   assert.equal(bad.stdout.toString(), '');
   const good = spawnSync(process.execPath, [script, 'SessionStart'], {
     input: JSON.stringify(startup({ cwd: dir })),
-    env: { ...process.env, CLAUDE_CONFIG_DIR: dir, SESSION_NAMER_PROJECT_SOURCE: 'cwd' },
+    env: { ...cleanEnv(), CLAUDE_CONFIG_DIR: dir, SESSION_NAMER_PROJECT_SOURCE: 'cwd' },
   });
   assert.equal(good.status, 0);
   assert.equal(JSON.parse(good.stdout.toString()).hookSpecificOutput.sessionTitle, path.basename(dir));
-  const unknown = spawnSync(process.execPath, [script, 'Bogus'], { input: '{}', env: { ...process.env, CLAUDE_CONFIG_DIR: dir } });
+  const unknown = spawnSync(process.execPath, [script, 'Bogus'], { input: '{}', env: { ...cleanEnv(), CLAUDE_CONFIG_DIR: dir } });
   assert.equal(unknown.status, 0);
   assert.equal(unknown.stdout.toString(), '');
 });
@@ -217,9 +255,80 @@ test('CLI wrapper: malformed stdin exits 0 with empty stdout; valid input prints
 test('CLI wrapper with fake result produces a final title end to end', () => {
   const script = path.join(__dirname, '..', 'hooks', 'namer.js');
   const dir = tmp();
-  const env = { ...process.env, CLAUDE_CONFIG_DIR: dir, SESSION_NAMER_PROJECT_SOURCE: 'cwd', SESSION_NAMER_FAKE_RESULT: 'Título simulado aqui' };
+  const env = { ...cleanEnv(), CLAUDE_CONFIG_DIR: dir, SESSION_NAMER_PROJECT_SOURCE: 'cwd', SESSION_NAMER_FAKE_RESULT: 'Título simulado aqui' };
   const r = spawnSync(process.execPath, [script, 'UserPromptSubmit'], { input: JSON.stringify(prompt('Migra as faturas para a V10 e valida os testes', { cwd: dir })), env });
   assert.equal(r.status, 0);
   assert.equal(JSON.parse(r.stdout.toString()).hookSpecificOutput.sessionTitle, `${path.basename(dir)} - Título simulado aqui`);
   assert.match(fs.readFileSync(path.join(dir, 'session-namer', 'log.txt'), 'utf8'), /final/);
+});
+
+// --- Run by OpenAI Codex (which can install Claude Code plugins): must be a no-op.
+// Inputs below mirror real hook payloads captured from Codex CLI 0.163.0 and Claude Code.
+const { isCodexInput } = require('../hooks/namer');
+const CODEX_TRANSCRIPT = String.raw`C:\Users\u\.codex\sessions\2026\11\03\rollout-2026-11-03T22-17-41-01a1a37d-4c40-7521-8bd0-f642cdc999aa.jsonl`;
+const CLAUDE_TRANSCRIPT = String.raw`C:\Users\u\.claude\projects\D--repos-arcva-2-0\edc2b95b-5ad8-4471-a202-238dfd21f249.jsonl`;
+
+test('Codex-run hook: SessionStart and UserPromptSubmit return null and never generate', async () => {
+  const generateCalls = [];
+  const { deps, dir } = makeDeps({ generateCalls });
+  const codexStart = startup({ session_id: '01a1a37d-4c40-7521-8bd0-f642cdc999aa', transcript_path: CODEX_TRANSCRIPT, model: 'gpt-5.6-luna', permission_mode: 'bypassPermissions' });
+  assert.equal(await run('SessionStart', codexStart, deps), null);
+  const codexPrompt = prompt('Migra as faturas para a V10 e valida os testes', {
+    session_id: '01a1a37d-4c40-7521-8bd0-f642cdc999aa', turn_id: '01a1a37d-571f-7152-8f7a-3ed615b3c3e8', transcript_path: CODEX_TRANSCRIPT, model: 'gpt-5.6-luna',
+  });
+  assert.equal(await run('UserPromptSubmit', codexPrompt, deps), null);
+  // turn_id + model alone (e.g. ephemeral thread without a transcript) is enough.
+  assert.equal(await run('UserPromptSubmit', { ...codexPrompt, transcript_path: null }, deps), null);
+  assert.equal(generateCalls.length, 0);
+  assert.equal(readState(dir, '01a1a37d-4c40-7521-8bd0-f642cdc999aa'), null);
+});
+
+test('Claude Code input is not mistaken for Codex and still gets titled', async () => {
+  const claudeStart = { session_id: 'edc2b95b', cwd: 'D:/repos/arcva-2.0', hook_event_name: 'SessionStart', source: 'startup', transcript_path: CLAUDE_TRANSCRIPT };
+  const claudePrompt = { session_id: 'edc2b95b', cwd: 'D:/repos/arcva-2.0', hook_event_name: 'UserPromptSubmit', permission_mode: 'default', prompt: 'Migra as faturas para a V10 e valida os testes', prompt_id: 'p1', transcript_path: CLAUDE_TRANSCRIPT };
+  assert.equal(isCodexInput(claudeStart), false);
+  assert.equal(isCodexInput(claudePrompt), false);
+  assert.equal(isCodexInput({ ...claudeStart, model: 'claude-haiku' }), false, 'model alone is not a Codex marker');
+  const generateCalls = [];
+  const { deps } = makeDeps({ generateCalls });
+  assert.equal((await run('SessionStart', claudeStart, deps)).hookSpecificOutput.sessionTitle, 'arcva-2.0');
+  const out = await run('UserPromptSubmit', claudePrompt, deps);
+  assert.equal(out.hookSpecificOutput.sessionTitle, 'arcva-2.0 - Migração de faturas para V10');
+  assert.equal(generateCalls.length, 1);
+});
+
+test('resume of a final session without session_title re-emits the final title', async () => {
+  const { dir, deps, generateCalls } = makeDeps();
+  writeState(dir, 's1', { v: 1, stage: 'final', title: 'arcva-2.0 - Algo bom', attempts: 1, project: 'arcva-2.0' });
+  const out = await run('SessionStart', startup({ source: 'resume' }), deps);
+  assert.equal(out.hookSpecificOutput.sessionTitle, 'arcva-2.0 - Algo bom');
+  assert.equal(readState(dir, 's1').stage, 'final');
+  assert.equal(generateCalls.length, 0);
+});
+
+test('resume with our provisional title but pruned state keeps auto-naming armed', async () => {
+  const { dir, deps, generateCalls } = makeDeps();
+  assert.equal(await run('SessionStart', startup({ source: 'resume', session_title: 'arcva-2.0' }), deps), null);
+  assert.equal(readState(dir, 's1').stage, 'provisional');
+  const out = await run('UserPromptSubmit', prompt('Migra as faturas para a V10 e valida os testes', { session_title: 'arcva-2.0' }), deps);
+  assert.equal(out.hookSpecificOutput.sessionTitle, 'arcva-2.0 - Migração de faturas para V10');
+  assert.equal(generateCalls.length, 1);
+});
+
+test('/session-name treats any dash argument as a flag and trims long manual topics at a word', async () => {
+  const { deps } = makeDeps();
+  assert.equal(await run('UserPromptSubmit', prompt('/session-name -r'), deps), null);
+  const long = await run('UserPromptSubmit', prompt(`/session-name ${'palavra '.repeat(20)}`), deps);
+  assert.ok(!long.hookSpecificOutput.sessionTitle.endsWith('pala'));
+  assert.ok(long.hookSpecificOutput.sessionTitle.length <= 80);
+});
+
+test('--regenerate clears the legacy reasserted flag so re-assertion works again', async () => {
+  const { dir, deps } = makeDeps();
+  writeState(dir, 's1', { v: 1, stage: 'final', title: 'arcva-2.0 - Velho', attempts: 1, project: 'arcva-2.0', reasserted: true });
+  await run('UserPromptSubmit', prompt('/session-name --regenerate'), deps);
+  assert.equal(readState(dir, 's1').reasserted, undefined);
+  await run('UserPromptSubmit', prompt('Migra as faturas para a V10 e valida os testes'), deps);
+  const again = await run('UserPromptSubmit', prompt('Agora corrige os testes que falharam'), deps);
+  assert.equal(again.hookSpecificOutput.sessionTitle, 'arcva-2.0 - Migração de faturas para V10');
 });

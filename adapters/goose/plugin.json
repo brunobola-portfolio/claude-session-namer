@@ -1,0 +1,5 @@
+{
+  "name": "session-namer",
+  "version": "1.1.0",
+  "description": "Automatic \"<project> - <topic>\" goose session names (claude-session-namer adapter)"
+}

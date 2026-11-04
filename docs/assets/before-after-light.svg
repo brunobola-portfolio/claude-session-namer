@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="416" viewBox="0 0 1280 416" role="img" aria-label="Session list before and after session-namer">
+  <title>Session list before and after session-namer</title>
+  <rect width="1280" height="416" rx="14" fill="#FBFBF8"/>
+  <rect x="0.5" y="0.5" width="1279" height="415" rx="14" fill="none" stroke="#E3E5EA"/>
+  <rect x="40" y="64" width="500" height="324" rx="10" fill="#FFFFFF" stroke="#E3E5EA"/>
+  <rect x="600" y="64" width="640" height="324" rx="10" fill="#FFFFFF" stroke="#2346D8" stroke-width="1.5"/>
+  <text x="44" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="18" font-weight="700" fill="#5F6779">Native titles</text>
+  <text x="604" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="18" font-weight="700" fill="#18202E">With session-namer</text>
+  <text x="64" y="96" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#687082">claude --resume</text>
+  <text x="624" y="96" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#5F6779">claude --resume</text>
+  <line x1="56" y1="164" x2="524" y2="164" stroke="#E3E5EA"/>
+  <line x1="616" y1="164" x2="1224" y2="164" stroke="#E3E5EA"/>
+  <text x="64" y="144" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="16" fill="#5F6779">Fix failing tests</text>
+  <text x="516" y="144" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#687082">3m</text>
+  <path d="M562,138 h40 m-8,-6 l8,6 l-8,6" fill="none" stroke="#2346D8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="624" y="125" width="49" height="26" rx="5" fill="#F2C230"/>
+  <text x="634" y="143" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="16" font-weight="700" fill="#3A2E00" textLength="28.799999999999997" lengthAdjust="spacingAndGlyphs">api</text>
+  <text x="685" y="143" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="16" fill="#18202E"><tspan fill="#5F6779">- </tspan>Fix failing invoice export tests</text>
+  <text x="1216" y="144" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#5F6779">3m</text>
+  <line x1="56" y1="216" x2="524" y2="216" stroke="#E3E5EA"/>
+  <line x1="616" y1="216" x2="1224" y2="216" stroke="#E3E5EA"/>
+  <text x="64" y="196" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="16" fill="#5F6779">Fix failing tests</text>
+  <text x="516" y="196" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#687082">18m</text>
+  <path d="M562,190 h40 m-8,-6 l8,6 l-8,6" fill="none" stroke="#2346D8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="624" y="177" width="78" height="26" rx="5" fill="#F2C230"/>
+  <text x="634" y="195" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="16" font-weight="700" fill="#3A2E00" textLength="57.599999999999994" lengthAdjust="spacingAndGlyphs">webapp</text>
+  <text x="714" y="195" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="16" fill="#18202E"><tspan fill="#5F6779">- </tspan>Fix flaky checkout e2e tests</text>
+  <text x="1216" y="196" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#5F6779">18m</text>
+  <line x1="56" y1="268" x2="524" y2="268" stroke="#E3E5EA"/>
+  <line x1="616" y1="268" x2="1224" y2="268" stroke="#E3E5EA"/>
+  <text x="64" y="248" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="16" fill="#5F6779">Migra as faturas para a V10 e valida…</text>
+  <text x="516" y="248" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#687082">1h</text>
+  <path d="M562,242 h40 m-8,-6 l8,6 l-8,6" fill="none" stroke="#2346D8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="624" y="229" width="106" height="26" rx="5" fill="#F2C230"/>
+  <text x="634" y="247" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="16" font-weight="700" fill="#3A2E00" textLength="86.39999999999999" lengthAdjust="spacingAndGlyphs">arcva-2.0</text>
+  <text x="742" y="247" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="16" fill="#18202E"><tspan fill="#5F6779">- </tspan>Migração de faturas para V10</text>
+  <text x="1216" y="248" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#5F6779">1h</text>
+  <line x1="56" y1="320" x2="524" y2="320" stroke="#E3E5EA"/>
+  <line x1="616" y1="320" x2="1224" y2="320" stroke="#E3E5EA"/>
+  <text x="64" y="300" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="16" fill="#5F6779">bruno-w11-graceful-unicorn</text>
+  <text x="516" y="300" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#687082">2h</text>
+  <path d="M562,294 h40 m-8,-6 l8,6 l-8,6" fill="none" stroke="#2346D8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="624" y="281" width="49" height="26" rx="5" fill="#F2C230"/>
+  <text x="634" y="299" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="16" font-weight="700" fill="#3A2E00" textLength="28.799999999999997" lengthAdjust="spacingAndGlyphs">crm</text>
+  <text x="685" y="299" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="16" fill="#18202E"><tspan fill="#5F6779">- </tspan>Paginación en listado de clientes</text>
+  <text x="1216" y="300" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#5F6779">2h</text>
+  <line x1="56" y1="372" x2="524" y2="372" stroke="#E3E5EA"/>
+  <line x1="616" y1="372" x2="1224" y2="372" stroke="#E3E5EA"/>
+  <text x="64" y="352" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="16" fill="#5F6779">Implement the changes we discussed</text>
+  <text x="516" y="352" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#687082">yesterday</text>
+  <path d="M562,346 h40 m-8,-6 l8,6 l-8,6" fill="none" stroke="#2346D8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="624" y="333" width="68" height="26" rx="5" fill="#F2C230"/>
+  <text x="634" y="351" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="16" font-weight="700" fill="#3A2E00" textLength="48" lengthAdjust="spacingAndGlyphs">infra</text>
+  <text x="704" y="351" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="16" fill="#18202E"><tspan fill="#5F6779">- </tspan>Rotate staging TLS certificates</text>
+  <text x="1216" y="352" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#5F6779">yesterday</text>
+</svg>

@@ -89,7 +89,7 @@ test('numeric options are clamped and invalid values fall back to defaults', () 
   assert.equal(low.timeoutMs, 1000);
   const high = loadConfig({ env: { SESSION_NAMER_MAX_WORDS: '99', SESSION_NAMER_TIMEOUT_MS: '99999' }, repoRoot: null });
   assert.equal(high.maxWords, 12);
-  assert.equal(high.timeoutMs, 27000);
+  assert.equal(high.timeoutMs, 22000);
   const bad = loadConfig({ env: { SESSION_NAMER_MAX_WORDS: 'abc', SESSION_NAMER_TIMEOUT_MS: '', CLAUDE_PLUGIN_OPTION_PROJECT_SOURCE: 'nope' }, repoRoot: null });
   assert.equal(bad.maxWords, 7);
   assert.equal(bad.timeoutMs, 20000);

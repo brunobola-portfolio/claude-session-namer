@@ -1,8 +1,11 @@
-# claude-session-namer — Design Spec
+# Original design spec (v1.0)
+
+> Historical document. The current design is described in
+> [architecture.md](architecture.md).
 
 **Date:** 2026-09-10
-**Status:** Implemented in v1.0.0 (2026-09-10). Amended after real-world testing: headless generation uses "lean" mode instead of `--bare` (see 4.5), the prompt is piped through stdin, and the default timeout is 20 s.
-**Author:** Bruno Bola (with Claude Code)
+**Status:** Implemented in v1.0.0 (2026-09-10). v1.1.0 replaced the Stop hook with re-assertion on the next two prompts; v1.2.0 detects mid-session renames through `session_title`. Amended after real-world testing: headless generation uses "lean" mode instead of `--bare` (see 4.5), the prompt is piped through stdin, and the default timeout is 20 s.
+**Author:** BolaLabs
 
 ## 1. Purpose
 
@@ -96,7 +99,7 @@ plugin, with VS Code mitigation. That is the gap.
 | Session resumes (`resume`) | SessionStart | If `session_title` is absent (old session never titled), emit `<project>`. If present, do nothing. |
 | `/clear`, compaction | SessionStart | Do nothing (platform ignores `sessionTitle` here anyway). |
 | First real prompt | UserPromptSubmit | If the session is still in "provisional" state (see 4.3), call the model, emit `<project> - <topic>`. |
-| First turn ends | Stop | If the plugin set a full title in this session, re-emit the same title once, to outlive the VS Code `ai-title` rewrite. Then never again. |
+| Next two prompts | UserPromptSubmit | Re-emit the final title on the next two prompts, to outlive the VS Code `ai-title` rewrite. A `session_title` the plugin did not set means the user renamed the session: stop for good. |
 | Any time | `/session-name [topic]` | Force a rename. With an argument uses it verbatim as topic; without, regenerates from the last user message. |
 
 ### 4.3 State: how the hook knows what to do
@@ -185,7 +188,7 @@ opt-in via `SESSION_NAMER_BARE=1` for API-key users only.
 
 ### 4.6 VS Code mitigation
 
-- Stop hook re-emits the final title exactly once (state `reasserted=true`).
+- UserPromptSubmit re-emits the final title on the next two prompts (state `reasserts` 0 to 2).
 - README documents that the VS Code sidebar may lag until reopen (known
   upstream issues #56014 / #60491) and that the CLI `/resume` list and
   claude.ai/code show the correct title immediately.
@@ -234,7 +237,7 @@ Per-repo override file `.session-namer.json` at repo root:
 claude-session-namer/
   .claude-plugin/plugin.json        # name, version, userConfig, hooks ref
   .claude-plugin/marketplace.json   # single-plugin marketplace
-  hooks/hooks.json                  # SessionStart, UserPromptSubmit, Stop (exec form)
+  hooks/hooks.json                  # SessionStart, UserPromptSubmit (exec form)
   hooks/namer.js                    # entry: node namer.js <event>
   lib/title.js                      # project/topic/sanitise/format (pure)
   lib/state.js                      # state files, pruning, config dir resolution
@@ -242,7 +245,7 @@ claude-session-namer/
   lib/config.js                     # options from env/userConfig/.session-namer.json
   commands/session-name.md          # /session-name [topic] [--remote] [--doctor]
   test/*.test.js                    # node:test, no deps; fixtures of hook inputs
-  docs/superpowers/specs/...        # this spec
+  docs/design-spec.md              # this spec
   README.md, README.pt.md, CHANGELOG.md, LICENSE (MIT)
   package.json                      # "test": "node --test", no dependencies
 ```
@@ -283,7 +286,7 @@ in README and checked by `--doctor`). Zero npm dependencies.
 | 26 | Node missing | Hook fails to spawn; Claude Code reports hook error once per event. README + doctor. Considered acceptable vs. shipping shell scripts in two dialects |
 | 27 | Old Claude Code without `sessionTitle` support | Output ignored harmlessly; README states minimum version 2.1.94 |
 | 28 | Remote Control started with a name | That name outranks; README explains, suggests `claude --rc` without a name |
-| 29 | VS Code shows stale ai-title | Stop re-assert once; README caveat |
+| 29 | VS Code shows stale ai-title | Re-assert on the next two prompts; README caveat |
 | 30 | State dir not writable | Fall back to OS temp dir; if that fails, run stateless (may re-generate once) |
 | 31 | Log growth | Rotate at 512 KB |
 | 32 | Plugin update changes format | State stores `v`; mismatched version → treat as provisional, never as `user` |
@@ -310,7 +313,7 @@ in README and checked by `--doctor`). Zero npm dependencies.
 ## 9. Release
 
 - Version in `plugin.json` (semver), CHANGELOG, tags.
-- Install: `/plugin marketplace add brunobola/claude-session-namer` then
+- Install: `/plugin marketplace add brunobola-portfolio/claude-session-namer` then
   `/plugin install session-namer@claude-session-namer`.
 - README (EN) + README.pt.md: what it does, 60-second install, options,
   Remote Control section, VS Code caveat, privacy, troubleshooting,
