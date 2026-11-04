@@ -4,7 +4,12 @@
  *
  * Hooks run with piped stdio, so stdout goes to the harness, not the
  * terminal. Instead:
- *   - POSIX: write OSC 0 (ESC ] 0 ; text BEL) to /dev/tty.
+ *   - POSIX: write OSC 0 (ESC ] 0 ; text BEL) to /dev/tty. A hook started
+ *     `detached` (Qwen Code does: setsid, so no controlling terminal) cannot
+ *     open /dev/tty; it then writes to the terminal of its nearest ancestor
+ *     that has one (`ps`, then an ownership check), and leaves that device in
+ *     SESSION_NAMER_TTY for the worker it starts, which outlives the hook
+ *     and so loses that ancestor chain.
  *   - Windows: set `process.title`, which libuv implements with
  *     SetConsoleTitleW on the console the hook inherited; ConPTY turns that
  *     into OSC 0 for Windows Terminal / VS Code. Verified live: a raw escape
@@ -69,6 +74,74 @@ function resolveConsoleOwner(startPid, { spawnSync = childProcess.spawnSync, env
   }
 }
 
+/** POSIX: where a hook leaves the terminal device it found, for the worker it starts. */
+const TTY_ENV = 'SESSION_NAMER_TTY';
+/** POSIX ancestor walk bounds: hops, whole walk, one `ps`. */
+const MAX_HOPS = 8;
+const WALK_BUDGET_MS = 1500;
+const PS_STEP_TIMEOUT_MS = 1000;
+/** `ps -o tty=` names of real terminals: Linux/BSD `pts/3`, macOS `ttys003`, consoles `tty1`. */
+const TTY_NAME_RE = /^(?:pts\/\d{1,6}|tty[A-Za-z]{0,3}\d{1,6})$/;
+const TTY_DEVICE_RE = /^\/dev\/(?:pts\/\d{1,6}|tty[A-Za-z]{0,3}\d{1,6})$/;
+
+/**
+ * POSIX: terminal device (`/dev/pts/3`, `/dev/ttys003`) of the nearest
+ * ancestor of `startPid` (inclusive) that has one, or null. One
+ * `ps -o ppid= -o tty= -p <pid>` per hop, no shell. Separate `-o` options:
+ * POSIX makes everything after `=` the header, so `-o ppid=,tty=` may drop
+ * the tty column. Bounded by `maxHops` and `budgetMs`.
+ */
+function ancestorTtyDevice(startPid, {
+  spawnSync = childProcess.spawnSync, now = Date.now, maxHops = MAX_HOPS, budgetMs = WALK_BUDGET_MS,
+} = {}) {
+  const deadline = now() + budgetMs;
+  const seen = new Set();
+  let pid = startPid;
+  for (let hop = 0; hop < maxHops && Number.isInteger(pid) && pid > 1 && !seen.has(pid); hop += 1) {
+    seen.add(pid);
+    const left = deadline - now();
+    if (left <= 0) break;
+    let r;
+    try {
+      r = spawnSync('ps', ['-o', 'ppid=', '-o', 'tty=', '-p', String(pid)], {
+        encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: Math.min(PS_STEP_TIMEOUT_MS, left),
+      });
+    } catch {
+      break;
+    }
+    const m = r && r.status === 0 && /^\s*(\d+)\s+(\S+)\s*$/.exec(String(r.stdout || ''));
+    if (!m) break;
+    if (TTY_NAME_RE.test(m[2])) return `/dev/${m[2]}`;
+    pid = Number.parseInt(m[1], 10);
+  }
+  return null;
+}
+
+/**
+ * POSIX: write `seq` to `device` if it is a terminal device of the current
+ * user (character device, owned by `uid`). Opened write-only with O_NOCTTY,
+ * so it never becomes our controlling terminal, and O_NONBLOCK, so a stopped
+ * terminal cannot hang the hook.
+ */
+function writeTtyDevice(device, seq, {
+  uid, statSync = fs.statSync, openSync = fs.openSync, writeSync = fs.writeSync, closeSync = fs.closeSync,
+  constants = fs.constants,
+} = {}) {
+  if (!seq || !TTY_DEVICE_RE.test(String(device)) || !Number.isInteger(uid)) return false;
+  let fd;
+  try {
+    const st = statSync(device);
+    if (!st.isCharacterDevice() || st.uid !== uid) return false;
+    fd = openSync(device, constants.O_WRONLY | (constants.O_NOCTTY || 0) | (constants.O_NONBLOCK || 0));
+    writeSync(fd, seq);
+    return true;
+  } catch {
+    return false;
+  } finally {
+    if (fd !== undefined) try { closeSync(fd); } catch { /* ignore */ }
+  }
+}
+
 /**
  * Set the title of the controlling terminal.
  * @param {{startPid?:number}} opts  Windows only: walk up from this PID to find the console
@@ -77,7 +150,8 @@ function resolveConsoleOwner(startPid, { spawnSync = childProcess.spawnSync, env
  */
 function writeTerminalTitle(title, {
   platform = process.platform, proc = process, startPid = null, spawnSync = childProcess.spawnSync,
-  openSync = fs.openSync, writeSync = fs.writeSync, closeSync = fs.closeSync,
+  openSync = fs.openSync, writeSync = fs.writeSync, closeSync = fs.closeSync, statSync = fs.statSync,
+  constants = fs.constants, env = process.env, now = Date.now,
 } = {}) {
   const clean = cleanTitle(title);
   if (!clean) return false;
@@ -90,16 +164,31 @@ function writeTerminalTitle(title, {
       return false;
     }
   }
+  const seq = oscTitleSequence(clean);
   let fd;
   try {
     fd = openSync('/dev/tty', 'w');
-    writeSync(fd, oscTitleSequence(clean));
+    writeSync(fd, seq);
     return true;
   } catch {
-    return false;
+    // No controlling terminal (a hook spawned `detached`): try an ancestor's terminal below.
   } finally {
     if (fd !== undefined) try { closeSync(fd); } catch { /* ignore */ }
   }
+  let uid = null;
+  try { uid = typeof proc.getuid === 'function' ? proc.getuid() : null; } catch { uid = null; }
+  const io = { uid, statSync, openSync, writeSync, closeSync, constants };
+  const hinted = env ? env[TTY_ENV] : undefined;
+  if (hinted && writeTtyDevice(hinted, seq, io)) return true;
+  const device = ancestorTtyDevice(proc.ppid, { spawnSync, now });
+  if (!device || !writeTtyDevice(device, seq, io)) return false;
+  // A worker started after this outlives our parent (it is reparented), so it cannot walk to
+  // the terminal itself: it inherits the device through the environment instead.
+  if (env) env[TTY_ENV] = device;
+  return true;
 }
 
-module.exports = { oscTitleSequence, writeTerminalTitle, setAncestorConsoleTitle, resolveConsoleOwner, cleanTitle, ANCESTOR_SCRIPT, PS_TIMEOUT_MS };
+module.exports = {
+  oscTitleSequence, writeTerminalTitle, setAncestorConsoleTitle, resolveConsoleOwner, cleanTitle,
+  ancestorTtyDevice, writeTtyDevice, ANCESTOR_SCRIPT, PS_TIMEOUT_MS, TTY_ENV, MAX_HOPS, WALK_BUDGET_MS, PS_STEP_TIMEOUT_MS,
+};
