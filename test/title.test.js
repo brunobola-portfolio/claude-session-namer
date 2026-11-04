@@ -78,18 +78,62 @@ test('resolveProject uses git common dir parent for repos and worktrees', () => 
   assert.equal(resolveProject({ cwd: 'D:/repos/arcva-2.0', projectSource: 'git', git: gitRel }), 'arcva-2.0');
   const gitWt = () => 'D:/repos/arcva-2.0/.git/worktrees/feature-x';
   assert.equal(resolveProject({ cwd: 'D:/repos/arcva-2.0-wt/feature-x', projectSource: 'git', git: gitWt }), 'arcva-2.0');
-  const gitWin = () => 'C:\\Users\\bruno\\proj\\.git';
-  assert.equal(resolveProject({ cwd: 'C:\\Users\\bruno\\proj\\sub', projectSource: 'git', git: gitWin }), 'proj');
+  const gitWin = () => 'C:\\Users\\u\\proj\\.git';
+  assert.equal(resolveProject({ cwd: 'C:\\Users\\u\\proj\\sub', projectSource: 'git', git: gitWin }), 'proj');
 });
 
 test('resolveProject falls back to cwd basename and honours override', () => {
   const noGit = () => null;
-  assert.equal(resolveProject({ cwd: 'D:/Implementacoes/Git Hub Repo Manager', projectSource: 'git', git: noGit }), 'Git Hub Repo Manager');
-  assert.equal(resolveProject({ cwd: '/home/bruno', projectSource: 'git', git: noGit }), 'bruno');
+  assert.equal(resolveProject({ cwd: 'D:/work/Git Hub Repo Manager', projectSource: 'git', git: noGit }), 'Git Hub Repo Manager');
+  assert.equal(resolveProject({ cwd: '/home/u', projectSource: 'git', git: noGit }), 'u');
   assert.equal(resolveProject({ cwd: 'C:\\', projectSource: 'git', git: noGit }), 'C');
   assert.equal(resolveProject({ cwd: '/', projectSource: 'git', git: noGit }), 'root');
   assert.equal(resolveProject({ cwd: 'D:/x/y', projectSource: 'cwd', git: () => { throw new Error('must not call'); } }), 'y');
   assert.equal(resolveProject({ cwd: 'D:/x/y', projectSource: 'git', git: noGit, override: 'ARCVA' }), 'ARCVA');
   const throwing = () => { throw new Error('git missing'); };
   assert.equal(resolveProject({ cwd: 'D:/x/ünïcode ✓', projectSource: 'git', git: throwing }), 'ünïcode ✓');
+});
+
+const { sanitizeProject } = require('../lib/title');
+
+test('sanitizeTopic accepts unspaced scripts (CJK, Thai) by length', () => {
+  assert.equal(sanitizeTopic('修复登录重定向循环问题'), '修复登录重定向循环问题');
+  assert.equal(sanitizeTopic('ログイン画面のバグ修正'), 'ログイン画面のバグ修正');
+  assert.equal(sanitizeTopic('แก้ไขหน้าเข้าสู่ระบบ'), 'แก้ไขหน้าเข้าสู่ระบบ');
+  assert.equal(sanitizeTopic('修'), null);
+  assert.equal(sanitizeTopic('word'), null, 'a single Latin word is still rejected');
+});
+
+test('sanitizeTopic honours maxWords as a cap and still rejects answers', () => {
+  assert.equal(sanitizeTopic('Add pagination to the customers list endpoint now', { maxWords: 4 }), 'Add pagination to the');
+  assert.equal(sanitizeTopic('one two three four five six seven eight nine ten eleven twelve thirteen', { maxWords: 12 }), null);
+  assert.equal(sanitizeTopic('Fix Safari login redirect loop', { maxWords: 99 }), 'Fix Safari login redirect loop');
+});
+
+test('sanitizeTopic strips quotes after a prefix and keeps hyphenated first words', () => {
+  assert.equal(sanitizeTopic('Title: "Fix login bug"'), 'Fix login bug');
+  assert.equal(sanitizeTopic('Topic-based routing for API'), 'Topic-based routing for API');
+  assert.equal(sanitizeTopic('Subject-verb agreement fixes'), 'Subject-verb agreement fixes');
+  assert.equal(sanitizeTopic('Topic - Fix login bug'), 'Fix login bug');
+});
+
+test('sanitizeTopic removes invisible, bidi and OSC characters', () => {
+  assert.equal(sanitizeTopic('\u200B \u200B'), null);
+  assert.equal(sanitizeTopic('Fix \u202Elogin\u202C bug'), 'Fix login bug');
+  assert.equal(sanitizeTopic('Fix \u001b]0;pwned\u0007login bug'), 'Fix login bug');
+});
+
+test('sanitizeProject and formatTitle strip escapes from project names and cap length', () => {
+  assert.equal(sanitizeProject('a\u001b]0;x\u0007b'), 'ab');
+  assert.equal(sanitizeProject('x'.repeat(200)).length, 60);
+  assert.equal(formatTitle('p\u0007roj', 'Fix \u001b[31mbug\u001b[0m here'), 'proj - Fix bug here');
+  assert.equal(formatTitle('proj', 'Fix login bug', { separator: '\n' }), 'proj - Fix login bug');
+});
+
+test('resolveProject handles submodules, bare repos and unsafe overrides', () => {
+  const g = (common) => (args) => (args.includes('--git-common-dir') ? common : null);
+  assert.equal(resolveProject({ cwd: '/w/parent/sub', git: g('/w/parent/.git/modules/sub') }), 'sub');
+  assert.equal(resolveProject({ cwd: '/w/parent/libs/a', git: g('/w/parent/.git/modules/libs/a') }), 'a');
+  assert.equal(resolveProject({ cwd: '/srv/repo.git', git: g('/srv/repo.git') }), 'repo');
+  assert.equal(resolveProject({ cwd: '/w/x', override: 'ARC\u001b]0;evil\u0007VA' }), 'ARCVA');
 });

@@ -21,6 +21,23 @@ const REASSERTS = 2;
 /** CLAUDE_CODE_ENTRYPOINT value of `claude -p` (headless) sessions. */
 const HEADLESS_ENTRYPOINT = 'sdk-cli';
 
+/**
+ * True when this hook is being run by OpenAI Codex (which can install Claude
+ * Code plugins) rather than by Claude Code. Positive Codex markers only, so
+ * Claude Code input can never match:
+ *   - Codex transcripts are `.../sessions/YYYY/MM/DD/rollout-<ts>-<id>.jsonl`;
+ *     Claude Code transcripts are `<session-uuid>.jsonl`.
+ *   - Codex adds `turn_id` and `model` to UserPromptSubmit (Codex extensions);
+ *     Claude Code sends neither on that event.
+ * Codex users should use adapters/codex instead.
+ */
+function isCodexInput(input) {
+  const tp = typeof input.transcript_path === 'string' ? input.transcript_path : '';
+  const base = tp.replace(/\\/g, '/').split('/').pop() || '';
+  if (/^rollout-.+\.jsonl$/.test(base)) return true;
+  return typeof input.turn_id === 'string' && input.turn_id !== '' && typeof input.model === 'string';
+}
+
 const output = (event, sessionTitle) => ({ hookSpecificOutput: { hookEventName: event, sessionTitle } });
 
 /**
@@ -34,9 +51,9 @@ function parseCommand(prompt) {
   const m = prompt.trim().match(/^\/(?:session-namer:)?session-name(?:\s+([\s\S]*))?$/i);
   if (!m) return null;
   const arg = (m[1] || '').trim();
-  if (!arg || /^--regenerate$/i.test(arg)) return { kind: 'regenerate' };
-  if (/^--/.test(arg)) return { kind: 'other' };
-  const topic = title.sanitizeTopic(arg) || arg.replace(/\s+/g, ' ').slice(0, 60).trim();
+  if (!arg || /^--?regenerate$/i.test(arg)) return { kind: 'regenerate' };
+  if (/^-/.test(arg)) return { kind: 'other' };
+  const topic = title.sanitizeTopic(arg) || title.trimAtWord(title.sanitizeProject(arg), 60);
   return topic ? { kind: 'set', topic } : { kind: 'regenerate' };
 }
 
@@ -70,6 +87,7 @@ async function run(event, input, deps = {}) {
   if (!EVENTS.has(event) || !input || typeof input !== 'object') return null;
   const env = deps.env || process.env;
   if (env.SESSION_NAMER_NESTED === '1') return null;
+  if (isCodexInput(input)) return null;
   const headless = env.CLAUDE_CODE_ENTRYPOINT === HEADLESS_ENTRYPOINT;
   const cwd = typeof input.cwd === 'string' && input.cwd ? input.cwd : process.cwd();
   const git = deps.git || defaultGit(cwd);
@@ -97,11 +115,19 @@ async function run(event, input, deps = {}) {
     const existing = typeof input.session_title === 'string' ? input.session_title.trim() : '';
     if (existing) {
       if (st && existing === st.title) return null; // our own title, nothing to do
+      // Our provisional title on a session whose state was pruned: keep naming it.
+      if (!st && existing === project) {
+        save({ stage: 'provisional', title: project });
+        log(`provisional "${project}" (state recovered)`);
+        return null;
+      }
       save({ stage: 'user', title: existing });
       log('user-titled, leaving alone');
       return null;
     }
     if (st && st.stage === 'user') return null;
+    // Resumed with our final title but Claude Code did not pass it back: keep it.
+    if (st && st.stage === 'final' && st.title) return output(event, st.title);
     save({ stage: 'provisional', title: project });
     log(`provisional "${project}"`);
     return output(event, project);
@@ -109,6 +135,16 @@ async function run(event, input, deps = {}) {
 
   if (event === 'UserPromptSubmit') {
     const command = parseCommand(input.prompt);
+    // Claude Code passes the current custom title. One we did not set means the
+    // user renamed the session (/rename, claude.ai): hands off from now on.
+    const custom = typeof input.session_title === 'string' ? input.session_title.trim() : '';
+    if (!command && custom && !(st && custom === st.title)) {
+      if (!st || st.stage !== 'user' || st.title !== custom) {
+        save({ stage: 'user', title: custom });
+        log('user-titled mid-session, leaving alone');
+      }
+      return null;
+    }
     if (command) {
       if (command.kind === 'set') {
         const full = title.formatTitle(project, command.topic, { separator: cfg.separator });
@@ -117,7 +153,7 @@ async function run(event, input, deps = {}) {
         return output(event, full);
       }
       if (command.kind === 'regenerate') {
-        save({ stage: 'provisional', title: project, attempts: 0, lastAttemptTs: 0, reasserts: 0 });
+        save({ stage: 'provisional', title: project, attempts: 0, lastAttemptTs: 0, reasserts: 0, reasserted: undefined });
         log('re-armed by /session-name');
         return output(event, project);
       }
@@ -144,7 +180,7 @@ async function run(event, input, deps = {}) {
     } catch (err) {
       log(`generate threw: ${err && err.message}`);
     }
-    const topic = title.sanitizeTopic(raw);
+    const topic = title.sanitizeTopic(raw, { maxWords: cfg.maxWords });
     if (!topic) {
       log(`generation failed (attempt ${attempts + 1})`);
       return null;
@@ -187,4 +223,4 @@ async function main() {
 
 if (require.main === module) main();
 
-module.exports = { run, STATE_VERSION, MAX_ATTEMPTS, RETRY_INTERVAL_MS, REASSERTS };
+module.exports = { run, isCodexInput, STATE_VERSION, MAX_ATTEMPTS, RETRY_INTERVAL_MS, REASSERTS };

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="476" viewBox="0 0 720 476" role="img" aria-label="How session-namer titles a session in three steps">
+  <title>How session-namer titles a session in three steps</title>
+  <rect width="720" height="476" rx="14" fill="#151A23"/>
+  <rect x="0.5" y="0.5" width="719" height="475" rx="14" fill="none" stroke="#2A3240"/>
+  <text x="40" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="22" fill="#8A93A6">What happens in one Claude Code session</text>
+  <rect x="40" y="70" width="640" height="112" rx="12" fill="#1B212C" stroke="#2A3240"/>
+  <circle cx="84" cy="126" r="22" fill="none" stroke="#7D93FF" stroke-width="2.5"/>
+  <text x="84" y="134" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="700" fill="#7D93FF">1</text>
+  <text x="126" y="116" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="28" font-weight="700" fill="#E7EAF0">Session starts</text>
+  <text x="126" y="154" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="22" fill="#98A1B3">Title becomes the git repo name.</text>
+  <rect x="40" y="202" width="640" height="112" rx="12" fill="#1B212C" stroke="#2A3240"/>
+  <circle cx="84" cy="258" r="22" fill="none" stroke="#7D93FF" stroke-width="2.5"/>
+  <text x="84" y="266" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="700" fill="#7D93FF">2</text>
+  <text x="126" y="248" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="28" font-weight="700" fill="#E7EAF0">First real prompt</text>
+  <text x="126" y="286" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="22" fill="#98A1B3">A fast model writes a short topic.</text>
+  <rect x="40" y="334" width="640" height="112" rx="12" fill="#1B212C" stroke="#2A3240"/>
+  <circle cx="84" cy="390" r="22" fill="none" stroke="#7D93FF" stroke-width="2.5"/>
+  <text x="84" y="398" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="700" fill="#7D93FF">3</text>
+  <text x="126" y="380" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="28" font-weight="700" fill="#E7EAF0">Next two prompts</text>
+  <text x="126" y="418" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="22" fill="#98A1B3">The title is set again, then left alone.</text>
+</svg>

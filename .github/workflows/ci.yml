@@ -5,18 +5,26 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
     name: node ${{ matrix.node }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        node: [18, 20, 22]
+        node: [18, 22, 24]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
       - run: npm test
@@ -29,4 +37,18 @@ jobs:
         run: |
           out=$(printf '{"session_id":"ci1","cwd":"%s","hook_event_name":"UserPromptSubmit","prompt":"Add pagination to the customers list and write tests"}' "$PWD" | node hooks/namer.js UserPromptSubmit)
           echo "$out"
-          echo "$out" | grep -q '"sessionTitle":"claude-session-namer - Add pagination to the customers list"'
+          echo "$out" | grep -q "\"sessionTitle\":\"$(basename "$PWD") - Add pagination to the customers list\""
+      - name: README artwork is up to date
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 24
+        run: |
+          node scripts/build-assets.js
+          test -z "$(git status --porcelain -- docs/assets)" || { git status --porcelain -- docs/assets; exit 1; }
+
+  # Single stable check name for branch protection, whatever the matrix becomes.
+  ci-ok:
+    name: ci-ok
+    needs: test
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: test "${{ needs.test.result }}" = "success"

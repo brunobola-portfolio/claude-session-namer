@@ -1,0 +1,15 @@
+name: Feature request
+description: An idea that would make session titles more useful.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What is hard today? A concrete example helps more than a proposed solution.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you would like

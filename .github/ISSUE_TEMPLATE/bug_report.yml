@@ -1,0 +1,40 @@
+name: Bug report
+description: A title was wrong, missing, or overwrote something it should not have.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you expected the title to be, and what it was.
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where
+      multiple: true
+      options:
+        - Claude Code CLI
+        - VS Code extension
+        - Remote Control (claude.ai/code or mobile)
+        - Other harness adapter
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of /session-name --doctor
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Last lines of ~/.claude/session-namer/log.txt
+      render: text
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: Windows 11 / macOS 15 / Ubuntu 24.04

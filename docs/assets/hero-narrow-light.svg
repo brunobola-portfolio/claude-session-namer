@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="560" viewBox="0 0 720 560" role="img" aria-label="session-namer: project-first titles for every AI coding session">
+  <title>session-namer: project-first titles for every AI coding session</title>
+  <rect width="720" height="560" rx="14" fill="#FBFBF8"/>
+  <rect x="0.5" y="0.5" width="719" height="559" rx="14" fill="none" stroke="#E3E5EA"/>
+  <text x="40" y="96" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="64" font-weight="800" letter-spacing="-1.5" fill="#18202E">session-namer</text>
+  <text x="42" y="150" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="28" fill="#5F6779">Project-first titles for every</text>
+  <text x="42" y="188" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="28" fill="#5F6779">AI coding session.</text>
+  
+  <g transform="rotate(-1.2 303 278.5)">
+    <path d="M40,253 Q40,250 43,250 L559,250 L566,278.5 L559,307 L43,307 Q40,307 40,304 Z" fill="#1A36AC" transform="translate(0 2)"/>
+    <path d="M40,253 Q40,250 43,250 L559,250 L566,278.5 L559,307 L43,307 Q40,307 40,304 Z" fill="#2346D8"/>
+    <rect x="44" y="253" width="511" height="2" rx="1" fill="#4A68E6" opacity="0.55"/>
+    <text x="60" y="290.2" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="30" font-weight="700" fill="#10247A" textLength="486" lengthAdjust="spacingAndGlyphs">webapp - Fix login redirect</text>
+    <text x="60" y="289" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="30" font-weight="700" fill="#FFFFFF" textLength="486" lengthAdjust="spacingAndGlyphs">webapp - Fix login redirect</text>
+  </g>
+  
+  <g transform="rotate(0.9 336 368.5)">
+    <path d="M64,343 Q64,340 67,340 L601,340 L608,368.5 L601,397 L67,397 Q64,397 64,394 Z" fill="#1A36AC" transform="translate(0 2)"/>
+    <path d="M64,343 Q64,340 67,340 L601,340 L608,368.5 L601,397 L67,397 Q64,397 64,394 Z" fill="#2346D8"/>
+    <rect x="68" y="343" width="529" height="2" rx="1" fill="#4A68E6" opacity="0.55"/>
+    <text x="84" y="380.2" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="30" font-weight="700" fill="#10247A" textLength="504" lengthAdjust="spacingAndGlyphs">arcva-2.0 - Faturas para V10</text>
+    <text x="84" y="379" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="30" font-weight="700" fill="#FFFFFF" textLength="504" lengthAdjust="spacingAndGlyphs">arcva-2.0 - Faturas para V10</text>
+  </g>
+  
+  <g transform="rotate(-0.5 320 458.5)">
+    <path d="M48,433 Q48,430 51,430 L585,430 L592,458.5 L585,487 L51,487 Q48,487 48,484 Z" fill="#1A36AC" transform="translate(0 2)"/>
+    <path d="M48,433 Q48,430 51,430 L585,430 L592,458.5 L585,487 L51,487 Q48,487 48,484 Z" fill="#2346D8"/>
+    <rect x="52" y="433" width="529" height="2" rx="1" fill="#4A68E6" opacity="0.55"/>
+    <text x="68" y="470.2" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="30" font-weight="700" fill="#10247A" textLength="504" lengthAdjust="spacingAndGlyphs">crm - Paginación de clientes</text>
+    <text x="68" y="469" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="30" font-weight="700" fill="#FFFFFF" textLength="504" lengthAdjust="spacingAndGlyphs">crm - Paginación de clientes</text>
+  </g>
+</svg>
