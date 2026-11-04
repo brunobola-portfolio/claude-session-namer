@@ -37,6 +37,15 @@ stores that PID. The worker then attaches to that console and calls
 `SetConsoleTitleW`. Cost: about 1 s of hidden PowerShell once per session in
 the `SessionStart` hook, and the same in the background for each title change.
 
+On macOS and Linux, Qwen starts hooks `detached` (a new session with no
+controlling terminal), so a hook cannot open `/dev/tty`. The hook then walks
+up its parent processes with `ps -o ppid= -o tty= -p <pid>` (at most 8, within
+1.5 s) to the first one with a terminal: `pts/N` on Linux, `ttysNNN` on macOS.
+If that device is a character device owned by you, the hook opens it with
+`O_NOCTTY` and writes OSC 0 there. The worker outlives the hook and is
+reparented, so it cannot walk to the terminal itself. The hook passes the
+device to it in `SESSION_NAMER_TTY`.
+
 Headless runs are skipped unless `name_headless` is on. Qwen does not tell
 hooks whether it runs interactively. `prompt_id` has the same
 `<session>########<n>` form in both modes, and `source_type` is set only for
@@ -59,7 +68,7 @@ with no prompt argument (`echo ... | qwen`) is still treated as interactive.
 Recommended, one line:
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 install qwen
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 install qwen
 ```
 
 The installer copies the runtime to `~/.session-namer/app/<version>`, adds the
@@ -92,7 +101,7 @@ rest of the run.
 ## Uninstall
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 uninstall qwen
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 uninstall qwen
 ```
 
 Or by hand: remove the three hook entries and, if you like,
@@ -127,9 +136,16 @@ hooks into the sandbox, and `uninstall qwen` restored the file byte for byte.
   `{session_id, transcript_path, cwd, hook_event_name, timestamp, permission_mode, prompt_id, prompt, submitted_prompt}`.
   Without the ancestor attach, the hook ran fine, but its title went to its
   own hidden console and never reached the terminal.
-- **macOS and Linux:** Qwen starts hooks `detached` (a new session with no
-  controlling terminal), so `/dev/tty` is unavailable and the tab title is
-  most likely **not** set there. Not verified.
+- **macOS and Linux:** proven in CI on 2026-11-04 (GitHub Actions
+  `ubuntu-latest` and `macos-latest`, Node 18, 22 and 24) under `script`, not
+  with a live Qwen session. A process started `detached` got `ENXIO` from
+  `/dev/tty` and still wrote `ESC ]0;proj - Topic BEL` to the pty
+  (`/dev/pts/0` on Linux, `/dev/ttys000` on macOS). Its worker, reparented to
+  PID 1, wrote through the inherited device. `hook.js`, started detached
+  through `/bin/sh -c` with a fake topic, wrote `proj` and then
+  `proj - Fix Safari login redirect loop`. Not verified: that Qwen's own hook
+  runner matches this setup (the Qwen process holds the terminal, at most 8
+  processes up), and how each terminal app shows the title.
 - Not verified: a session with a Qwen OAuth sign-in or a real provider key.
   Only the model endpoint differed from that setup.
 - Only the tab is titled; the saved session keeps Qwen's own title.

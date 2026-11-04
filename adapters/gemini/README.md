@@ -28,7 +28,8 @@ title when it exits. So the hook only hands off to a worker started with
 escapes the job object that would kill it. It sets the title with
 `SetConsoleTitleW` (via `process.title`), waits until the wrapper shell has
 gone, and sets it again. On macOS and Linux the hook writes OSC 0 to
-`/dev/tty`.
+`/dev/tty`. A hook with no controlling terminal falls back to the terminal of
+its nearest parent process that has one (see the Qwen adapter).
 
 Headless runs are skipped unless `name_headless` is on. Gemini does not tell
 hooks whether it runs interactively: the hook input and environment carry no
@@ -58,7 +59,7 @@ interactive.
 Recommended, one line:
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 install gemini
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 install gemini
 ```
 
 The installer copies the runtime to `~/.session-namer/app/<version>`, adds the
@@ -95,7 +96,7 @@ rest of the run.
 ## Uninstall
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 uninstall gemini
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 uninstall gemini
 ```
 
 Or by hand: remove the three hook entries and, if you like,
@@ -137,9 +138,10 @@ byte for byte.
 - 2026-11-03: with `hideWindowTitle: false`, Gemini wrote
   `◇  Ready (claude-session-namer)` and `✦  Working… (claude-session-namer)`
   around our titles.
-- Not verified: macOS and Linux terminals, and a session with a Google
-  sign-in or a real API key. Only the model endpoint differed from that
-  setup.
+- Not verified: a live Gemini session on macOS and Linux, and a session with
+  a Google sign-in or a real API key (only the model endpoint differed). The
+  shared OSC 0 code, including the fallback for a hook without a controlling
+  terminal, is tested on real ptys on Ubuntu and macOS in CI.
 - Only the tab is titled; the saved session keeps Gemini's own summary.
 
 ## Log

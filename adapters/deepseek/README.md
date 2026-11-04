@@ -47,7 +47,7 @@ README), so no DeepSeek tokens are spent on titles.
 Recommended, one line:
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 install deepseek
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 install deepseek
 ```
 
 The installer copies the runtime to `~/.session-namer/app/<version>` and adds
@@ -89,7 +89,7 @@ the session list (Web UI sidebar, `--resume` picker) shows
 ## Uninstall
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 uninstall deepseek
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 uninstall deepseek
 ```
 
 Or by hand: remove those rows from the profile's `cordis.patch.yml` (or stop

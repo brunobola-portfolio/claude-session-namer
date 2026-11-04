@@ -133,7 +133,8 @@ test('osc: POSIX writes OSC 0 to /dev/tty and survives a missing terminal', () =
   const ok = osc.writeTerminalTitle('arcva - T', { platform: 'linux', openSync: (p) => { written.push(p); return 7; }, writeSync: (fd, s) => written.push(s), closeSync: () => {} });
   assert.equal(ok, true);
   assert.deepEqual(written, ['/dev/tty', '\u001b]0;arcva - T\u0007']);
-  assert.equal(osc.writeTerminalTitle('x', { platform: 'linux', openSync: () => { throw new Error('ENXIO'); } }), false);
+  const noAncestorTty = { spawnSync: () => ({ status: 1, stdout: '' }), env: {}, proc: { ppid: 10, getuid: () => 501 } };
+  assert.equal(osc.writeTerminalTitle('x', { platform: 'linux', openSync: () => { throw new Error('ENXIO'); }, ...noAncestorTty }), false);
 });
 
 test('osc: resolveConsoleOwner parses the PowerShell answer', () => {

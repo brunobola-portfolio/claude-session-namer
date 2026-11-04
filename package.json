@@ -1,6 +1,6 @@
 {
   "name": "claude-session-namer",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Project-first \"<project> - <topic>\" titles for AI coding sessions: a Claude Code plugin plus adapters and a one-command installer for 13 other agents.",
   "private": true,
   "license": "MIT",

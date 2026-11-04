@@ -648,8 +648,8 @@ test('list shows the Level column and the unsupported agents', async () => {
   const row = (id) => l.out.split('\n').find((s) => new RegExp(`^. ${id}\\s`).test(s)) || '';
   assert.match(l.out, /Level/);
   assert.match(row('claude'), /\sstable\s/);
-  for (const id of ['codex', 'pi', 'opencode', 'kilo', 'copilot', 'cline', 'crush', 'goose', 'deepseek']) assert.match(row(id), /\sbeta\s/, id);
-  for (const id of ['amp', 'grok']) assert.match(row(id), /\spartly verified\s/, id);
+  for (const id of ['codex', 'pi', 'opencode', 'kilo', 'copilot', 'cline', 'crush', 'goose', 'deepseek', 'grok']) assert.match(row(id), /\sbeta\s/, id);
+  for (const id of ['amp']) assert.match(row(id), /\spartly verified\s/, id);
   for (const id of ['gemini', 'qwen']) assert.match(row(id), /\stab title only\s/, id);
   assert.match(l.out, /Not supported:[\s\S]*Factory Droid\s+no session-title API[\s\S]*Cursor CLI\s+no session-title API/);
   assert.doesNotMatch(l.out.replace('DeepSeek Harness', ''), /harness/i, 'product names aside, the CLI says "agent"');
