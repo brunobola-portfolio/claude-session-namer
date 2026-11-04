@@ -134,9 +134,11 @@ function runUnderScript(extraEnv) {
   const [cmd, args] = process.platform === 'darwin'
     ? ['script', ['-q', '/dev/null', process.execPath, __filename]]
     : ['script', ['-qec', `${shq(process.execPath)} ${shq(__filename)}`, '/dev/null']];
+  // stdin: macOS script aborts unless tcgetattr fails with ENOTTY, and Node's 'pipe' is a
+  // socket (EOPNOTSUPP), so it gets /dev/null. On Linux a pipe kept open while script runs.
+  const stdin = process.platform === 'darwin' ? 'ignore' : 'pipe';
   return new Promise((resolve) => {
-    // stdin stays open while script runs: some builds stop, or send EOF to the pty, when it ends.
-    const p = childProcess.spawn(cmd, args, { env, stdio: ['pipe', 'pipe', 'pipe'] });
+    const p = childProcess.spawn(cmd, args, { env, stdio: [stdin, 'pipe', 'pipe'] });
     let out = '';
     const timer = setTimeout(() => p.kill('SIGKILL'), 12000);
     p.stdout.on('data', (d) => { out += d; });
@@ -144,7 +146,7 @@ function runUnderScript(extraEnv) {
     p.on('error', (e) => { clearTimeout(timer); resolve({ code: -1, out: `${out}${e}`, report: null }); });
     p.on('close', (code) => {
       clearTimeout(timer);
-      p.stdin.destroy();
+      if (p.stdin) p.stdin.destroy();
       const at = out.lastIndexOf(REPORT_TAG);
       let report = null;
       if (at >= 0) {
