@@ -158,6 +158,26 @@ test('defaultRename passes argv without a shell and detects "Error:" output', as
   assert.match(bad.detail, /401/);
 });
 
+test('defaultRename classifies the real amp 0.0.1793736138 outputs', async () => {
+  const amp = { command: 'C:/amp.exe', args: [] };
+  const url = `https://ampcode.com/threads/${TID}`;
+  // Observed without a login (exit 1, stderr), plus the success line from Amp's rename command.
+  const cases = [
+    [{ code: 1, stdout: '', stderr: 'Error: Failed to rename thread: API request for getThreadTail failed: 401\n' }, false, /getThreadTail failed: 401/],
+    [{ code: 1, stdout: '', stderr: 'Error: Thread name cannot be empty\n' }, false, /cannot be empty/],
+    [{ code: 1, stdout: '', stderr: `Thread ${url} does not exist.\n` }, false, /does not exist/],
+    [{ code: 1, stdout: '', stderr: '\x1b[31m\x1b[1mError: \x1b[22m\x1b[39mFailed to rename thread: API request for getThreadTail failed: 401\n' }, false, /^Error: Failed to rename thread/],
+    [{ code: 0, stdout: `\x1b[32m✓ Thread ${url} renamed to "arcva - Fix Safari login loop"\n\x1b[39m`, stderr: '' }, true, /^✓ Thread .* renamed to "arcva - Fix Safari login loop"$/],
+  ];
+  for (const [result, ok, detail] of cases) {
+    // eslint-disable-next-line no-await-in-loop
+    const r = await defaultRename({ amp, threadId: TID, newTitle: 'arcva - Fix Safari login loop', run: async () => result });
+    assert.equal(r.ok, ok, JSON.stringify(result));
+    assert.match(r.detail, detail);
+    assert.doesNotMatch(r.detail, /\x1b/);
+  }
+});
+
 test('defaultRename refuses to run anything through a .cmd shim (cmd.exe injection)', async () => {
   let ran = false;
   const run = async () => { ran = true; return { code: 0, stdout: '', stderr: '' }; };

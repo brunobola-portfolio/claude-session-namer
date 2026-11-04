@@ -64,7 +64,16 @@ function resolveAmp(env = process.env, execPath = process.execPath, { platform =
   return safeSpawn.findOnPath('amp', env, opts) || (platform === 'win32' ? null : { command: 'amp', args: [] });
 }
 
-/** `amp threads rename <id> <title>`, argv only, never a shell. Resolves {ok, detail}. */
+/** Colour escapes: Amp paints "Error: " red when colour is forced (FORCE_COLOR). */
+const ANSI_RE = /\x1b\[[0-9;]*[A-Za-z]/g;
+
+/**
+ * `amp threads rename <id> <title>`, argv only, never a shell. Resolves {ok, detail}.
+ * Amp 0.0.1793736138: success prints `✓ Thread <url> renamed to "<title>"` and exits 0.
+ * Every failure exits 1: `Error: ...` on stderr (not logged in: `Error: Failed to rename
+ * thread: API request for getThreadTail failed: 401`), or, for an unknown thread,
+ * `Thread <url> does not exist.` with no prefix. The text check is a guard only.
+ */
 function defaultRename({ amp, threadId, newTitle, run = safeSpawn.runCommand, env = process.env }) {
   if (!amp || !amp.command || safeSpawn.isShim(amp.command)) {
     return Promise.resolve({ ok: false, detail: 'no shell-free amp executable found (set SESSION_NAMER_AMP_PATH to amp.exe)' });
@@ -72,8 +81,7 @@ function defaultRename({ amp, threadId, newTitle, run = safeSpawn.runCommand, en
   return run(amp, ['threads', 'rename', threadId, newTitle], {
     timeoutMs: RENAME_TIMEOUT_MS, env: { ...env, SESSION_NAMER_NESTED: '1' },
   }).then((r) => {
-    const text = `${r.stdout || ''}${r.stderr || ''}`.trim();
-    // amp prints "Error: ..." and may still exit 0, so check the text too.
+    const text = `${r.stdout || ''}${r.stderr || ''}`.replace(ANSI_RE, '').trim();
     if (r.code !== 0 || r.timedOut || /^error\b/im.test(text)) {
       return { ok: false, detail: (text || (r.timedOut ? 'timeout' : `exit ${r.code}`)).slice(0, 200) };
     }

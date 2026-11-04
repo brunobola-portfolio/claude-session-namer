@@ -8,7 +8,7 @@
   <text x="88" y="118" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="17" font-weight="700" fill="#2346D8">1</text>
   <text x="118" y="119" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="21" font-weight="700" fill="#18202E">Session starts</text>
   <text x="76" y="166" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="16" fill="#5F6779">Title becomes the git repo name.</text>
-  <text x="76" y="192" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="16" fill="#5F6779">Worktree-aware. No network, 0 ms.</text>
+  <text x="76" y="192" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="16" fill="#5F6779">Worktree-aware. No network, &lt;100 ms.</text>
   
   <g transform="rotate(0 126.5 264.5)">
     <path d="M74,253 Q74,250 77,250 L172,250 L179,264.5 L172,279 L77,279 Q74,279 74,276 Z" fill="#1A36AC" transform="translate(0 2)"/>

@@ -4,13 +4,14 @@
 
 Only the latest release receives fixes. Update the Claude Code plugin with
 `/plugin marketplace update claude-session-namer`, and everything else by
-re-running `npx -y github:brunobola-portfolio/claude-session-namer install <agent...>`.
+re-running `npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 install <agent...>`.
 
 ## What session-namer does on your machine
 
 **Model calls.** To write a topic, session-namer makes one call to a fast
-model per session, through a login you already have. It retries at most three
-times if a call fails, and `/session-name --regenerate` allows a fresh call.
+model per session, through a login you already have. It tries at most three
+times in total if a call fails, and `/session-name --regenerate` allows a
+fresh call.
 The prompt is truncated to about 1,800 characters, wrapped in delimiters, and
 the model is told to treat it as data. Which login is used:
 

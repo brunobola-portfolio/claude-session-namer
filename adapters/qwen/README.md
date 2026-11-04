@@ -4,11 +4,11 @@ Qwen Code has no supported way for a hook or another process to rename a
 session it is running. So this adapter titles the **terminal tab**:
 `<project>` at start, then `<project> - <topic>` a few seconds after your first
 real prompt. Qwen's saved title, shown in `/resume` and `qwen sessions list`,
-is left to Qwen's own auto-title and your `/rename`. Status: beta.
+is left to Qwen's own auto-title and your `/rename`. Status: beta, terminal tab title only.
 
 | Tested with | OS | Date |
 | :-- | :-- | :-- |
-| `@qwen-code/qwen-code` 0.26.6, under ConPTY | Windows 11 | 2026-11-03 |
+| `@qwen-code/qwen-code` 0.26.6, under ConPTY | Windows 11 | 2026-11-04 |
 
 ## How it works
 
@@ -37,10 +37,16 @@ stores that PID. The worker then attaches to that console and calls
 `SetConsoleTitleW`. Cost: about 1 s of hidden PowerShell once per session in
 the `SessionStart` hook, and the same in the background for each title change.
 
-Headless runs (`qwen -p "..."`) are skipped unless `name_headless` is on. Qwen
-does not tell hooks whether it runs interactively, so the first hook of a
-session reads the Qwen command line among its parent processes and looks for
-`-p` / `--prompt` (about 1 s more on Windows, once per session).
+Headless runs are skipped unless `name_headless` is on. Qwen does not tell
+hooks whether it runs interactively. `prompt_id` has the same
+`<session>########<n>` form in both modes, and `source_type` is set only for
+daemon and ACP sessions. So the first hook of a session reads the Qwen command
+line among its parent processes (about 1 s more on Windows, once per session).
+A run counts as headless when the command line has `-p` / `--prompt`, or when
+the first prompt is exactly the plain words on the command line, as in
+`qwen "fix the bug"`, which Qwen runs non-interactively. `-i` /
+`--prompt-interactive` always counts as interactive. A prompt piped on stdin
+with no prompt argument (`echo ... | qwen`) is still treated as interactive.
 
 ## Requirements
 
@@ -53,7 +59,7 @@ session reads the Qwen command line among its parent processes and looks for
 Recommended, one line:
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer install qwen
+npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 install qwen
 ```
 
 The installer copies the runtime to `~/.session-namer/app/<version>`, adds the
@@ -86,7 +92,7 @@ rest of the run.
 ## Uninstall
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer uninstall qwen
+npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 uninstall qwen
 ```
 
 Or by hand: remove the three hook entries and, if you like,
@@ -103,22 +109,29 @@ The shared options apply: `CLAUDE_SESSION_NAMER=off`, `SESSION_NAMER_MODEL`,
 
 ## Limitations
 
-What was verified on 2026-11-03: Qwen ran under ConPTY with a sandboxed
-`QWEN_HOME`, `OPENAI_API_KEY=sk-invalid-placeholder` and an unreachable
-`OPENAI_BASE_URL`. The model call failed with `Connection error`, while the
-hooks fired before it. The captured `UserPromptSubmit` payload was
-`{session_id, transcript_path, cwd, hook_event_name, timestamp, permission_mode, prompt_id, prompt, submitted_prompt}`.
+What was verified on 2026-11-04: Qwen ran under ConPTY, started through the
+npm `qwen` shim in a fresh git repository. It used a sandboxed `QWEN_HOME`,
+`security.auth.selectedType: "openai"` and a placeholder `OPENAI_API_KEY`, and
+`OPENAI_BASE_URL` pointed at a local mock of the OpenAI chat API. So the model
+call succeeded, and Qwen rendered the mock's reply. `install qwen` wrote the
+hooks into the sandbox, and `uninstall qwen` restored the file byte for byte.
 
-- The OSC 0 stream showed `claude-session-namer` at start, then
-  `claude-session-namer - Fix Safari login redirect loop` about 5 s after the
-  prompt. It stayed for the rest of the run.
-- Without the ancestor attach, the hook ran fine, but its title went to its
+- Interactive session: the OSC 0 stream showed `sn-qwen-e2e` at start, then
+  `sn-qwen-e2e - Fix Safari login redirect loop` about 4 s after the prompt.
+- `qwen "Paginate the customer list endpoint"`: the log read
+  `headless run (prompt given on the command line), skipped`, and no topic
+  was generated. The tab still showed the project name from `SessionStart`.
+- `echo ... | qwen` still generated a topic (one `claude -p` call), like an
+  interactive session.
+- 2026-11-03: the captured `UserPromptSubmit` payload was
+  `{session_id, transcript_path, cwd, hook_event_name, timestamp, permission_mode, prompt_id, prompt, submitted_prompt}`.
+  Without the ancestor attach, the hook ran fine, but its title went to its
   own hidden console and never reached the terminal.
 - **macOS and Linux:** Qwen starts hooks `detached` (a new session with no
   controlling terminal), so `/dev/tty` is unavailable and the tab title is
   most likely **not** set there. Not verified.
-- Headless detection only sees `-p` / `--prompt` on the command line. A prompt
-  passed positionally or piped on stdin is treated as interactive.
+- Not verified: a session with a Qwen OAuth sign-in or a real provider key.
+  Only the model endpoint differed from that setup.
 - Only the tab is titled; the saved session keeps Qwen's own title.
 
 ## Log

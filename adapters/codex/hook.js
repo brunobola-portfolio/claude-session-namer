@@ -9,7 +9,9 @@
  * Codex hooks cannot return a title, so the hook only decides whether the
  * prompt deserves one and hands the slow part to a detached worker:
  *   1. thread/read via the Codex app server: skip exec/sub-agent/ephemeral
- *      threads and threads that already have a name we did not set;
+ *      threads and threads that already have a name we did not set; when the
+ *      shared daemon runs the thread, claim it with "<project>" at once (see
+ *      shouldClaim);
  *   2. topic from `claude -p` (or opt-in `codex exec`, see SESSION_NAMER_CODEX_GENERATOR);
  *   3. thread/name/set "<project> - <topic>".
  * The hook prints nothing (plain stdout would be injected into the model
@@ -182,6 +184,20 @@ function refusal(thread, st, cfg) {
 }
 
 /**
+ * Claim the thread with the provisional "<project>" name before generating?
+ * Codex 0.163+ TUIs title a new thread themselves about 2 s after the first
+ * prompt, unless it already has a name, and that title would make us stand
+ * down. We claim only when the shared daemon runs the thread (reached via the
+ * proxy, status not notLoaded): every TUI attached to it then receives
+ * thread/name/updated, shows the name live and skips its own title. An
+ * embedded TUI (no daemon) would never see the claim, keep the thread
+ * "unnamed" on screen and re-request its own title every turn, so there we
+ * leave Codex's title alone.
+ */
+const shouldClaim = (thread, conn, st) => !!thread && thread.loaded === true && !!conn && conn.mode === 'proxy'
+  && !(thread.name || '').trim() && !(st && st.title);
+
+/**
  * Background job: check the thread, generate the topic, set the name.
  * @returns {Promise<{ok:boolean, title?:string, why?:string}>}
  */
@@ -199,16 +215,29 @@ async function worker(job, deps = {}) {
   const codex = deps.codex || findCodex(env);
   const call = deps.callAppServer || appServer.callAppServer;
   const rpc = (script) => call({ codex, script, env, timeoutMs: 10000, log });
-  const current = state.readState(dir, sessionId) || {};
-  const save = (patch) => state.writeState(dir, sessionId, { ...current, v: STATE_VERSION, project: job.project, ...patch, ts: now() });
+  let current = state.readState(dir, sessionId) || {};
+  const save = (patch) => {
+    current = { ...current, v: STATE_VERSION, project: job.project, ...patch, ts: now() };
+    state.writeState(dir, sessionId, current);
+  };
 
-  const pre = await rpc((request) => appServer.readThread(request, sessionId));
+  const pre = await rpc(async (request, conn) => {
+    const thread = await appServer.readThread(request, sessionId);
+    const why = refusal(thread, current, cfg);
+    if (why || !shouldClaim(thread, conn, current)) return { thread, why, claimed: false };
+    await appServer.setThreadName(request, sessionId, job.project);
+    return { thread, why: null, claimed: true };
+  });
   if (pre.ok) {
-    const why = refusal(pre.value, current, cfg);
+    const { thread, why, claimed } = pre.value || {};
     if (why) {
-      save({ stage: why === 'user' ? 'user' : 'skip', reason: why, title: pre.value && pre.value.name });
+      save({ stage: why === 'user' ? 'user' : 'skip', reason: why, title: thread && thread.name });
       log(`not naming: ${why}`);
       return { ok: false, why };
+    }
+    if (claimed) {
+      save({ stage: 'provisional', title: job.project });
+      log(`provisional "${job.project}" via ${pre.mode || 'proxy'}`);
     }
   } else {
     log(`thread/read failed: ${pre.error}`);
@@ -276,6 +305,6 @@ async function main() {
 if (require.main === module) main();
 
 module.exports = {
-  run, worker, refusal, readSessionMeta, isHeadlessMeta, codexHome, stateDirFor,
+  run, worker, refusal, shouldClaim, readSessionMeta, isHeadlessMeta, codexHome, stateDirFor,
   STATE_VERSION, MAX_ATTEMPTS, RETRY_INTERVAL_MS, JOB_ENV,
 };

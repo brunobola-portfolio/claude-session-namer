@@ -223,6 +223,17 @@ test('doctor prints checks and a dry-run using the fake result', async () => {
   assert.match(report, /dry-run generation in \d+ ms -> "Paginação na lista de clientes"/);
 });
 
+test('doctor says why generation failed and compares Claude Code versions', async () => {
+  const { doctor, compareVersions, MIN_CLAUDE } = require('../hooks/session-name-cli');
+  const cfgDir = tmp();
+  const report = await doctor({ ...cleanEnv(), CLAUDE_CONFIG_DIR: cfgDir, SESSION_NAMER_CLAUDE_PATH: path.join(cfgDir, 'no-such-claude') });
+  assert.match(report, /^FAIL dry-run generation in \d+ ms -> failed: \S/m);
+  assert.equal(MIN_CLAUDE, '2.1.152');
+  assert.equal(compareVersions('2.1.318 (Claude Code)', MIN_CLAUDE), 1);
+  assert.equal(compareVersions('2.1.94 (Claude Code)', MIN_CLAUDE), -1);
+  assert.equal(compareVersions('unknown', MIN_CLAUDE), null);
+});
+
 test('config: separator, project override via repo file and cwd source', async () => {
   const repo = tmp();
   fs.writeFileSync(path.join(repo, '.session-namer.json'), JSON.stringify({ project: 'ARCVA' }));
@@ -295,6 +306,24 @@ test('Claude Code input is not mistaken for Codex and still gets titled', async 
   const out = await run('UserPromptSubmit', claudePrompt, deps);
   assert.equal(out.hookSpecificOutput.sessionTitle, 'arcva-2.0 - Migração de faturas para V10');
   assert.equal(generateCalls.length, 1);
+});
+
+test('Grok-run hook (Grok runs Claude Code plugins) is a no-op; Claude Code input is not mistaken for it', async () => {
+  const { isGrokInput } = require('../hooks/namer');
+  const generateCalls = [];
+  const { deps } = makeDeps({ generateCalls });
+  // Key set captured from Grok Build 1.0.70's UserPromptSubmit payload.
+  const grokPrompt = {
+    hookEventName: 'UserPromptSubmit', hook_event_name: 'UserPromptSubmit', sessionId: 'g1', session_id: 'g1',
+    cwd: 'D:/repos/arcva-2.0', workspaceRoot: 'D:/repos/arcva-2.0', timestamp: '2026-11-04T05:00:00Z',
+    transcriptPath: 'x', transcript_path: 'x', promptId: 'p1', permissionMode: 'default', permission_mode: 'default',
+    prompt: 'Migra as faturas para a V10 e valida os testes',
+  };
+  assert.equal(isGrokInput(grokPrompt), true);
+  assert.equal(await run('UserPromptSubmit', grokPrompt, deps), null);
+  assert.equal(await run('SessionStart', { ...grokPrompt, hookEventName: 'SessionStart', hook_event_name: 'SessionStart', source: 'startup' }, deps), null);
+  assert.equal(generateCalls.length, 0);
+  assert.equal(isGrokInput({ session_id: 's', cwd: '/x', hook_event_name: 'UserPromptSubmit', prompt: 'x', prompt_id: 'p1' }), false);
 });
 
 test('resume of a final session without session_title re-emits the final title', async () => {

@@ -4,7 +4,7 @@
 > [architecture.md](architecture.md).
 
 **Date:** 2026-09-10
-**Status:** Implemented in v1.0.0 (2026-09-10). v1.1.0 replaced the Stop hook with re-assertion on the next two prompts; v1.2.0 detects mid-session renames through `session_title`. Amended after real-world testing: headless generation uses "lean" mode instead of `--bare` (see 4.5), the prompt is piped through stdin, and the default timeout is 20 s.
+**Status:** Implemented in v1.0.0 (2026-09-10). v1.1.0 replaced the Stop hook with re-assertion on the next two prompts; v1.2.0 detects mid-session renames through `session_title`. Amended after real-world testing: headless generation uses "lean" mode instead of `--bare` (see 4.5), the prompt is piped through stdin, and the default timeout is 20 s. Current limits that differ from the numbers below: the timeout maximum is 22 s, and the minimum Claude Code version is 2.1.152.
 **Author:** BolaLabs
 
 ## 1. Purpose
@@ -18,7 +18,7 @@ dependencies beyond Claude Code itself plus Node.js.
 
 The user problem: with many parallel sessions, especially seen from a
 phone via Remote Control, auto-generated or hostname-based titles are
-unreadable. `bruno-w11-graceful-unicorn` says nothing; `arcva-2.0 -
+unreadable. `graceful-tumbling-unicorn` says nothing; `arcva-2.0 -
 Migração de faturas para V10` says everything.
 
 ## 2. Non-goals

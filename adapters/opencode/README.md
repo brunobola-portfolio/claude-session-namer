@@ -49,8 +49,8 @@ Safety rules:
 Recommended, one line (`kilo` for Kilo CLI):
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer install opencode
-npx -y github:brunobola-portfolio/claude-session-namer install kilo
+npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 install opencode
+npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 install kilo
 ```
 
 The installer copies the runtime to `~/.session-namer/app/<version>` and adds
@@ -77,7 +77,7 @@ the project root.
 
 **Kilo CLI.** Use the same entry in `kilo.json` at the project root (tested).
 For all projects, add it to `~/.config/kilo/kilo.jsonc` (same key, same
-loader; not tested live).
+loader; checked with `kilo debug config` on 7.8.18).
 
 ```json
 {
@@ -97,8 +97,8 @@ message. The session list (`opencode session list`, the TUI picker or
 ## Uninstall
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer uninstall opencode
-npx -y github:brunobola-portfolio/claude-session-namer uninstall kilo
+npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 uninstall opencode
+npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 uninstall kilo
 ```
 
 Or by hand: remove the `file:///.../adapters/opencode/index.mjs` entry from the

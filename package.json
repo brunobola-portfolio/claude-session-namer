@@ -12,23 +12,46 @@
   "bin": {
     "session-namer": "bin/session-namer.js"
   },
+  "files": [
+    "bin/",
+    "lib/",
+    "hooks/",
+    "adapters/",
+    "commands/",
+    ".claude-plugin/",
+    "CHANGELOG.md"
+  ],
   "engines": {
     "node": ">=18"
   },
   "scripts": {
     "test": "node --test",
-    "doctor": "node hooks/session-name-cli.js --doctor"
+    "doctor": "node hooks/session-name-cli.js --doctor",
+    "release:check": "node scripts/release.js --check",
+    "release": "node scripts/release.js",
+    "assets": "node scripts/build-assets.js"
   },
   "keywords": [
     "claude-code",
     "claude-code-plugin",
+    "codex",
+    "opencode",
+    "copilot-cli",
+    "gemini-cli",
+    "ai-agents",
+    "coding-agents",
+    "session-title",
     "hooks",
-    "session",
-    "remote-control"
+    "remote-control",
+    "terminal-title"
   ],
   "pi": {
     "extensions": [
       "./adapters/pi/index.js"
     ]
+  },
+  "homepage": "https://github.com/brunobola-portfolio/claude-session-namer#readme",
+  "bugs": {
+    "url": "https://github.com/brunobola-portfolio/claude-session-namer/issues"
   }
 }

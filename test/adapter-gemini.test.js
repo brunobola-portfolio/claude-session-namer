@@ -172,6 +172,102 @@ test('headless runs are skipped (checked once per session) unless name_headless 
   assert.equal(checks, 1, 'no detection when name_headless is on');
 });
 
+const argvHeadless = require('../adapters/gemini/headless-argv');
+const HOOK_LINE = 'powershell.exe -NoProfile -Command node "C:/Users/me/.session-namer/app/1.2.0/adapters/gemini/hook.js"; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }';
+const SAFARI = 'Fix the login redirect loop on Safari';
+
+test('headless-argv: Windows command lines split like CommandLineToArgvW', () => {
+  const { splitWindows } = argvHeadless;
+  assert.deepEqual(
+    splitWindows('"C:\\Program Files\\nodejs\\node.exe" --max-old-space-size=8192 "C:\\npm\\node_modules\\@google\\gemini-cli\\bundle\\gemini.js" "Fix the login redirect loop on Safari"'),
+    ['C:\\Program Files\\nodejs\\node.exe', '--max-old-space-size=8192', 'C:\\npm\\node_modules\\@google\\gemini-cli\\bundle\\gemini.js', SAFARI],
+  );
+  assert.deepEqual(splitWindows('gemini.js "say \\"hi\\" now" a\\\\b "c\\\\" ""'), ['gemini.js', 'say "hi" now', 'a\\\\b', 'c\\', '']);
+  assert.deepEqual(splitWindows('  node   gemini.js\tfix  '), ['node', 'gemini.js', 'fix']);
+  assert.deepEqual(argvHeadless.splitPosix('node /usr/lib/gemini.js say "hi"'), ['node', '/usr/lib/gemini.js', 'say', '"hi"']);
+});
+
+test('headless-argv: a prompt given on the command line is recognised, a typed one is not', () => {
+  const { promptOnCommandLine } = argvHeadless;
+  const tok = (s) => argvHeadless.splitWindows(s);
+  assert.equal(promptOnCommandLine(tok(`node gemini.js "${SAFARI}"`), SAFARI), true);
+  assert.equal(promptOnCommandLine(tok(`node gemini.js --model gemini-2.5-pro ${SAFARI}`), SAFARI), true, 'unquoted words are joined with spaces');
+  assert.equal(promptOnCommandLine(tok(`node gemini.js "${SAFARI}" --yolo`), SAFARI), true, 'a positional before options');
+  assert.equal(promptOnCommandLine(tok(`node gemini.js "${SAFARI}"`), `piped file contents\n\n${SAFARI}`), true, 'stdin or hook context before the query');
+  assert.equal(promptOnCommandLine(tok(`node gemini.js "${SAFARI}"`), `${SAFARI}\r\n`), true);
+  assert.equal(promptOnCommandLine(tok('node gemini.js --model gemini-2.5-pro'), SAFARI), false);
+  assert.equal(promptOnCommandLine(tok(`node gemini.js "${SAFARI}"`), 'Fix the login redirect loop'), false, 'a prefix is not enough');
+  assert.equal(promptOnCommandLine(tok('node gemini.js --model gemini-2.5-pro'), 'tell me about gemini-2.5-pro'), false, 'an option value at the end of a typed prompt');
+  assert.equal(promptOnCommandLine(tok(`node gemini.js "${SAFARI}"`), '   '), false);
+  assert.equal(promptOnCommandLine(null, SAFARI), false);
+});
+
+test('headless-argv: agent line, -i and Gemini\'s CI rule', () => {
+  const lines = [HOOK_LINE, 'node C:/npm/node_modules/@google/gemini-cli/bundle/gemini.js "x y z"', 'cmd.exe /c gemini.cmd'];
+  assert.equal(argvHeadless.agentLine('gemini', lines), lines[1]);
+  assert.deepEqual(argvHeadless.agentArgs('gemini', lines, { platform: 'win32' }), ['node', 'C:/npm/node_modules/@google/gemini-cli/bundle/gemini.js', 'x y z']);
+  assert.equal(argvHeadless.agentArgs('gemini', [HOOK_LINE, 'node gemini.js -i "x y z"'], { platform: 'win32' }), null);
+  assert.equal(argvHeadless.agentArgs('gemini', [HOOK_LINE], { platform: 'win32' }), null);
+  const { ciHeadless } = argvHeadless;
+  assert.equal(ciHeadless({ CI: 'true' }, 'node gemini.js'), true);
+  assert.equal(ciHeadless({ GITHUB_ACTIONS: 'true' }, null), true);
+  assert.equal(ciHeadless({ CI: '1' }, 'node gemini.js'), false, 'Gemini compares with "true"');
+  assert.equal(ciHeadless({ CI: 'true', GEMINI_CLI_INTEGRATION_TEST: 'true' }, 'node gemini.js'), false);
+  assert.equal(ciHeadless({ CI: 'true' }, 'node gemini.js -i "x"'), false);
+  assert.equal(ciHeadless({ CI: 'true' }, 'node gemini.js --acp'), false);
+  assert.equal(ciHeadless({}, 'node gemini.js'), false);
+});
+
+test('gemini: `gemini "<prompt>"` (positional, non-interactive) is skipped; the command line is read once', async () => {
+  const spec = tmpSpec();
+  let reads = 0;
+  const jobs = [];
+  const line = `"C:\\Program Files\\nodejs\\node.exe" --max-old-space-size=8192 "C:\\npm\\node_modules\\@google\\gemini-cli\\bundle\\gemini.js" "${SAFARI}"`;
+  const opts = {
+    platform: 'win32', ci: true, env: {}, getLines: () => { reads += 1; return [HOOK_LINE, line]; },
+    deps: { project, now: 1_000, spawnJob: async (j) => { jobs.push(j); return true; } },
+  };
+  assert.equal((await argvHeadless.handleHook(spec, input('SessionStart'), opts)).action, 'title');
+  assert.equal((await argvHeadless.handleHook(spec, input('BeforeAgent', { prompt: SAFARI }), opts)).action, 'skip-headless');
+  assert.equal((await argvHeadless.handleHook(spec, input('AfterAgent'), opts)).action, 'skip-headless');
+  assert.equal(reads, 1);
+  assert.equal(jobs.filter((j) => j.prompt).length, 0, 'no topic generation');
+  const log = fs.readFileSync(path.join(spec.homeDir, 'session-namer', 'log.txt'), 'utf8');
+  assert.match(log, /headless run \(prompt given on the command line\), skipped/);
+});
+
+test('gemini: an interactive session still generates; a typed first prompt never matches', async () => {
+  const spec = tmpSpec();
+  const jobs = [];
+  const opts = {
+    platform: 'linux', ci: true, env: {}, getLines: () => [HOOK_LINE, 'node /usr/lib/node_modules/@google/gemini-cli/bundle/gemini.js --model gemini-2.5-pro'],
+    deps: { project, now: 1_000, write: () => true, spawnJob: async (j) => { jobs.push(j); return true; } },
+  };
+  assert.equal((await argvHeadless.handleHook(spec, input('SessionStart'), opts)).action, 'title');
+  assert.equal((await argvHeadless.handleHook(spec, input('BeforeAgent', { prompt: SAFARI }), opts)).action, 'generating');
+  assert.equal(jobs.length, 1);
+  // `gemini -i "<prompt>"` runs the TUI: generates too.
+  const spec2 = tmpSpec();
+  const i = { ...opts, getLines: () => [HOOK_LINE, `node gemini.js -i "${SAFARI}"`] };
+  await argvHeadless.handleHook(spec2, input('SessionStart'), i);
+  assert.equal((await argvHeadless.handleHook(spec2, input('BeforeAgent', { prompt: SAFARI }), i)).action, 'generating');
+});
+
+test('gemini: CI=true is headless (Gemini\'s rule); first hook being the prompt decides at once', async () => {
+  const deps = { project, now: 1_000, write: () => true, spawnJob: async () => true };
+  const ci = { platform: 'linux', ci: true, env: { CI: 'true' }, getLines: () => [HOOK_LINE, 'node gemini.js'], deps };
+  assert.equal((await argvHeadless.handleHook(tmpSpec(), input('SessionStart'), ci)).action, 'skip-headless');
+  assert.equal((await argvHeadless.handleHook(tmpSpec(), input('SessionStart'), { ...ci, ci: false })).action, 'title', 'Qwen has no CI rule');
+  const first = { platform: 'linux', ci: true, env: {}, getLines: () => [HOOK_LINE, `node gemini.js ${SAFARI}`], deps };
+  assert.equal((await argvHeadless.handleHook(tmpSpec(), input('BeforeAgent', { prompt: SAFARI }), first)).action, 'skip-headless');
+  // name_headless on: the command line is never read.
+  let reads = 0;
+  const on = () => ({ cfg: { enabled: true, nameHeadless: true }, project: 'arcva' });
+  const r = await argvHeadless.handleHook(tmpSpec(), input('BeforeAgent', { prompt: SAFARI }), { ...first, getLines: () => { reads += 1; return []; }, deps: { ...deps, project: on } });
+  assert.equal(r.action, 'generating');
+  assert.equal(reads, 0);
+});
+
 test('osc-title PowerShell helpers are bounded well under the hook timeout', () => {
   assert.ok(osc.PS_TIMEOUT_MS <= 5000);
   assert.ok(hook.STDIN_TIMEOUT_MS <= 5000);

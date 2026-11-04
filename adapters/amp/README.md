@@ -2,7 +2,7 @@
 
 Gives every new Amp thread a `<project> - <topic>` title, generated from your
 first real prompt by the same headless `claude -p` call the Claude Code plugin
-uses (`lib/generate.js`). Status: beta.
+uses (`lib/generate.js`). Status: beta, partly verified (see [Limitations](#limitations)).
 
 | Tested with | OS | Date |
 | :-- | :-- | :-- |
@@ -42,7 +42,7 @@ it does not rename and logs why.
 Recommended, one line:
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer install amp
+npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 install amp
 ```
 
 The installer copies the runtime to `~/.session-namer/app/<version>` and writes
@@ -82,7 +82,7 @@ title becomes `<project> - <topic>`, and the log shows a
 ## Uninstall
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer uninstall amp
+npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 uninstall amp
 ```
 
 Or by hand: delete `session-namer.js` from the plugin folder
@@ -104,8 +104,27 @@ root.
 
 ## Limitations
 
-- Not seen end to end: without an Amp login, the plugin was seen loading and
-  calling `amp threads rename`, but the rename itself was not observed.
+- Not seen end to end. Amp threads live on Amp's server, so without a login
+  none can be created or renamed (`amp threads list` and `amp threads new`
+  answer `Invalid or missing API key`). What was verified on 2026-11-04
+  without a login:
+  - Amp loads the plugin in its own runtime (`amp plugins exec`), where the
+    running executable is `amp.exe`, so the rename never goes through a shell.
+  - Given an `agent.start` event, the installed plugin returns at once, then
+    runs `amp threads rename <thread> "<project> - <topic>"` with the real
+    `amp.exe`. Amp answered
+    `Error: Failed to rename thread: API request for getThreadTail failed: 401`
+    (exit 1). The plugin logged it as a failed rename, to be retried on a later
+    prompt (at most 3 attempts).
+  - Amp's rename command, read in the 0.0.1793736138 binary, loads the thread
+    from the server, refuses an empty thread or a title over 256 characters,
+    needs your Amp login, and sets the title through the thread's server-side
+    actor. Success prints `✓ Thread <url> renamed to "<title>"` and exits 0.
+    Every failure exits 1.
+  - Not verified: the title change itself, and whether a rename made while the
+    first turn is still running always succeeds. `amp plugins exec` cannot
+    send `agent.start`, because Amp delivers it through a separate call. Only
+    a signed-in session can trigger the plugin from inside Amp.
 - State is kept in memory for the plugin process (at most 200 threads). A
   thread reopened in a new Amp process that already has a title is left alone.
 - If your first prompt is trivial and Amp auto-titles the thread, the next real

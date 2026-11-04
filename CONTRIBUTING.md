@@ -25,7 +25,8 @@ git clone https://github.com/brunobola-portfolio/claude-session-namer
 cd claude-session-namer
 npm test                       # node --test, no install step, no dependencies
 npm run doctor                 # diagnostics against your local Claude Code
-node scripts/build-assets.js   # regenerate the README artwork in docs/assets/
+npm run assets                 # regenerate the README artwork in docs/assets/
+npm run release:check          # versions, install pins and changelog agree
 ```
 
 To try your working copy inside Claude Code, add it as a local marketplace:
@@ -50,9 +51,8 @@ testing the hook flow.
 - **Cross-platform.** CI runs Ubuntu, macOS and Windows on Node 18, 22 and 24.
   Path handling goes through `path.win32` / `path.posix` explicitly where it
   matters.
-- **Versioning.** Bump the version in `package.json`,
-  `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` together
-  (a test enforces it) and add a `CHANGELOG.md` entry.
+- **Changelog.** Describe user-visible changes under `## [Unreleased]` in
+  `CHANGELOG.md`; the release script dates that section.
 
 ## How changes reach `main`
 
@@ -63,7 +63,26 @@ a pull request:
   up to date with `main`;
 - one approving review from the code owner, with all review threads resolved;
 - squash merge only, so history stays linear; the branch is deleted after merge;
-- force pushes and deleting `main` are blocked for everyone.
+- force pushes and deleting `main` are blocked for everyone;
+- release tags (`v*`) can only be created, moved or deleted by the maintainer.
+
+## Releasing (maintainer)
+
+One command bumps the version in `package.json`, `.claude-plugin/plugin.json`
+and `.claude-plugin/marketplace.json`, updates every `#vX.Y.Z` install pin in
+the docs and dates the `Unreleased` changelog section:
+
+```bash
+npm run release -- 1.3.0       # prints the exact git and gh commands to run next
+```
+
+Open the release PR, merge it, then tag the merge commit on `main`
+(`git tag -a v1.3.0 -m v1.3.0 && git push origin v1.3.0`). The
+[Release workflow](.github/workflows/release.yml) refuses a tag that does not
+match the manifests or is not on `main`, runs the tests and publishes the
+GitHub release with the changelog section as its notes. Claude Code users get
+the update from the marketplace (`/plugin marketplace update
+claude-session-namer`); everyone else re-runs the pinned `npx` command.
 
 ## Commit messages
 

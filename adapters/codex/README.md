@@ -10,6 +10,7 @@ a turn.
 | Tested with | OS | Date |
 | :-- | :-- | :-- |
 | Codex CLI 0.163.0 | Windows 11 | 2026-11-03 |
+| Codex CLI 0.163.0 TUI, embedded and attached to the daemon (app-server 0.166.0) | Windows 11 | 2026-11-04 |
 
 ## How it works
 
@@ -21,15 +22,22 @@ Codex hooks cannot return a title, so the adapter works like this:
    starts a **detached** worker and exits in about 0.3 s. It prints nothing,
    because plain hook stdout would be added to the model context.
 2. The worker calls `thread/read` through the app server. If the thread is
-   already named (by you, `/rename`, or the desktop app), it is left alone.
-   Sub-agent, ephemeral and exec threads are also left alone.
-3. It generates the topic with the headless `claude -p` call the Claude Code
+   already named (by you, `/rename`, the desktop app, or Codex's own
+   automatic title), it is left alone. Sub-agent, ephemeral and exec threads
+   are also left alone.
+3. If the shared daemon runs the thread, the worker names it `<project>` at
+   once, as the Claude Code plugin does. Codex 0.163's TUI titles a new thread
+   itself about 2 s after the first prompt, but only while the thread has no
+   name, so this claim keeps Codex's title from replacing ours.
+4. It generates the topic with the headless `claude -p` call the Claude Code
    plugin uses (no tools, no MCP servers, one turn). See
    [Configuration](#configuration) for the opt-in `codex exec` generator.
-4. It reads the thread again (in case you renamed it meanwhile), then calls
-   `thread/name/set`. It first tries the shared daemon (`codex app-server proxy`),
-   so attached clients get `thread/name/updated` live. If the daemon is not
-   running, it falls back to a private `codex app-server`.
+5. It reads the thread again (in case you renamed it meanwhile), then calls
+   `thread/name/set`. It first tries the shared daemon through
+   `codex app-server proxy` (the daemon's control socket speaks WebSocket, so
+   the adapter does the handshake and framing itself). Every TUI attached to
+   the daemon gets `thread/name/updated` and redraws at once. If the daemon is
+   not running, it falls back to a private `codex app-server`.
 
 The project name comes from git, as in the Claude plugin, and
 `.session-namer.json` works the same way.
@@ -55,13 +63,19 @@ thread simply stays unnamed.
 - Node.js 18+ on `PATH` and Codex CLI with hooks enabled (the default).
 - The `claude` CLI, logged in, for the default generator. Without Claude Code,
   set `SESSION_NAMER_CODEX_GENERATOR=codex` (see above for the trade-off).
+- For titles in the TUI: the Codex daemon. Run `codex app-server daemon start`
+  once from a normal (not administrator) terminal; Codex refuses to start it
+  from an elevated one. The TUI attaches to it on its own when you start
+  `codex` from a normal terminal without `-c`, `--enable`, `--disable` or
+  `--search` (`/daemon` then says "Running daemon"). See
+  [Limitations](#limitations) for what happens without it.
 
 ## Install
 
 Recommended, one line:
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer install codex
+npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 install codex
 ```
 
 The installer copies the runtime to `~/.session-namer/app/<version>` and adds
@@ -109,14 +123,17 @@ The `SessionStart` hook only prunes old state files, so you can leave it out.
 
 ## Verify
 
-Send a real prompt in a new thread. A few seconds later the thread name shows
-in the `codex resume` picker as `<project> - <topic>`, and the log has a
-`final "<project> - <topic>"` line.
+Send a real prompt in a new thread. With the daemon running, the TUI's
+terminal title and `/status` ("Thread name:") show `<project>` within a second
+and `<project> - <topic>` a few seconds later. The log has a
+`provisional "<project>" via proxy` line, then a
+`final "<project> - <topic>" via proxy` line. The `codex resume` picker shows
+the same name.
 
 ## Uninstall
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer uninstall codex
+npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 uninstall codex
 ```
 
 Or by hand:
@@ -144,11 +161,17 @@ Thread names that were already set stay. Rename them with `/rename` in the TUI.
 
 ## Limitations
 
-- **Open TUI title.** If no daemon is running, the name is written to the
-  session index and is visible through `thread/read` and `thread/list` at once,
-  including on the server that runs the session. Whether an open TUI redraws
-  its header without the daemon has not been verified. `codex resume` reads the
-  same index.
+- **TUI without the daemon.** By default `codex` runs its own embedded app
+  server, and a name set from another process never reaches an open TUI: the
+  status line, terminal title, `/status` and the exit hint keep the TUI's old
+  name until the thread is opened again (`codex resume`). On top of that,
+  Codex 0.163's TUI titles every new thread itself about 2 s after the first
+  prompt (for example "Explain regex basics"), before `claude -p` returns. The
+  worker then finds a name it did not set and leaves it alone
+  (`not naming: user` in the log). The adapter does not claim these threads
+  early, because the open TUI would never see the claim: it would show no
+  name and ask its model for a title again on every prompt. Start the daemon
+  (see [Requirements](#requirements)) to get session-namer titles in the TUI.
 - **Language (`codex exec` generator only).** `codex exec` still loads your
   global `~/.codex/AGENTS.md`. A "reply in Portuguese" instruction there can
   make English prompts get Portuguese topics.

@@ -667,7 +667,7 @@ test('status: counts every printed problem, aligns columns, clips long versions,
   const cols = st.out.split('\n').filter((s) => /^[✓–✗] /.test(s)).map((s) => s.search(/not installed|installed/));
   assert.equal(new Set(cols).size, 1, `columns line up:\n${st.out}`);
   assert.match(st.out, /✓ cline[\s\S]*?→ check: `cline history`/);
-  assert.match(st.out, /– crush[^\n]*\n\s+→ install with: session-namer install crush/);
+  assert.match(st.out, /– crush[^\n]*\n\s+→ install with: npx -y github:brunobola-portfolio\/claude-session-namer#v1\.0\.0 install crush/);
   assert.doesNotMatch(st.out, /runtime|harness/i);
 });
 
@@ -685,11 +685,25 @@ test('help: no arguments prints it with exit 0, npx form, #tag pin and the docs 
   const sb = sandbox();
   const r = await cli(sb, []);
   assert.equal(r.code, 0);
-  assert.match(r.out, /npx -y github:brunobola-portfolio\/claude-session-namer <command>/);
-  assert.match(r.out, /github:brunobola-portfolio\/claude-session-namer#v\d+\.\d+\.\d+/);
-  assert.match(r.out, /https:\/\/github\.com\/brunobola-portfolio\/claude-session-namer\/blob\/main\/docs\/install\.md/);
+  assert.match(r.out, /npx -y github:brunobola-portfolio\/claude-session-namer#v\d+\.\d+\.\d+ <command>/);
+  assert.match(r.out, /without #v\d+\.\d+\.\d+, npx runs the latest code on main/);
+  assert.match(r.out, /https:\/\/github\.com\/brunobola-portfolio\/claude-session-namer\/blob\/v\d+\.\d+\.\d+\/docs\/install\.md/);
   assert.match(r.out, /install <agent\.\.\.>/);
   assert.doesNotMatch(r.out, /harness/i);
+});
+
+test('dry runs speak in the future tense and a mistyped command gets a suggestion', async () => {
+  const sb = sandbox();
+  const bins = { crush: '/x/crush' };
+  const spawn = () => ({ status: 0, stdout: '1.0.0\n' });
+  const r = await cli(sb, ['install', 'crush', '--dry-run'], { version: '1.0.0', bins, spawn });
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.out, /✓ crush\s+would (create|add|update|write) /);
+  assert.doesNotMatch(r.out, /would be: /);
+  assert.match(r.out, /Dry run complete; nothing was written\./);
+  const typo = await cli(sb, ['instal', 'crush']);
+  assert.equal(typo.code, 2);
+  assert.match(typo.out, /Unknown command "instal"\. Did you mean install\?/);
 });
 
 test('the CLI exits quietly when stdout is closed early (| head)', async () => {

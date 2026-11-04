@@ -6,26 +6,26 @@
   <text x="40" y="122" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="22" fill="#8A93A6">Fix failing tests</text>
   <rect x="40" y="138" width="67" height="38" rx="6" fill="#F2C230"/>
   <text x="52" y="165" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="24" font-weight="700" fill="#3A2E00" textLength="43.199999999999996" lengthAdjust="spacingAndGlyphs">api</text>
-  <text x="119" y="164" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="20" fill="#E7EAF0"><tspan fill="#98A1B3">- </tspan>Fix failing invoice export tests</text>
+  <text x="119" y="164" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="24" fill="#E7EAF0"><tspan fill="#98A1B3">- </tspan>Fix failing invoice export tests</text>
   <line x1="40" y1="192" x2="680" y2="192" stroke="#2A3240"/>
   <text x="40" y="226" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="22" fill="#8A93A6">Fix failing tests</text>
   <rect x="40" y="242" width="110" height="38" rx="6" fill="#F2C230"/>
   <text x="52" y="269" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="24" font-weight="700" fill="#3A2E00" textLength="86.39999999999999" lengthAdjust="spacingAndGlyphs">webapp</text>
-  <text x="162" y="268" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="20" fill="#E7EAF0"><tspan fill="#98A1B3">- </tspan>Fix flaky checkout e2e tests</text>
+  <text x="162" y="268" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="24" fill="#E7EAF0"><tspan fill="#98A1B3">- </tspan>Fix flaky checkout e2e tests</text>
   <line x1="40" y1="296" x2="680" y2="296" stroke="#2A3240"/>
   <text x="40" y="330" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="22" fill="#8A93A6">Migra as faturas para a V10 e val…</text>
   <rect x="40" y="346" width="154" height="38" rx="6" fill="#F2C230"/>
   <text x="52" y="373" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="24" font-weight="700" fill="#3A2E00" textLength="129.6" lengthAdjust="spacingAndGlyphs">arcva-2.0</text>
-  <text x="206" y="372" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="20" fill="#E7EAF0"><tspan fill="#98A1B3">- </tspan>Migração de faturas para V10</text>
+  <text x="206" y="372" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="24" fill="#E7EAF0"><tspan fill="#98A1B3">- </tspan>Migração de faturas para V10</text>
   <line x1="40" y1="400" x2="680" y2="400" stroke="#2A3240"/>
-  <text x="40" y="434" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="22" fill="#8A93A6">bruno-w11-graceful-unicorn</text>
+  <text x="40" y="434" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="22" fill="#8A93A6">graceful-tumbling-unicorn</text>
   <rect x="40" y="450" width="67" height="38" rx="6" fill="#F2C230"/>
   <text x="52" y="477" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="24" font-weight="700" fill="#3A2E00" textLength="43.199999999999996" lengthAdjust="spacingAndGlyphs">crm</text>
-  <text x="119" y="476" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="20" fill="#E7EAF0"><tspan fill="#98A1B3">- </tspan>Paginación en listado de clientes</text>
+  <text x="119" y="476" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="24" fill="#E7EAF0"><tspan fill="#98A1B3">- </tspan>Paginación en listado de clientes</text>
   <line x1="40" y1="504" x2="680" y2="504" stroke="#2A3240"/>
   <text x="40" y="538" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="22" fill="#8A93A6">Implement the changes we discussed</text>
   <rect x="40" y="554" width="96" height="38" rx="6" fill="#F2C230"/>
   <text x="52" y="581" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="24" font-weight="700" fill="#3A2E00" textLength="72" lengthAdjust="spacingAndGlyphs">infra</text>
-  <text x="148" y="580" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="20" fill="#E7EAF0"><tspan fill="#98A1B3">- </tspan>Rotate staging TLS certificates</text>
+  <text x="148" y="580" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="24" fill="#E7EAF0"><tspan fill="#98A1B3">- </tspan>Rotate staging TLS certificates</text>
   <line x1="40" y1="608" x2="680" y2="608" stroke="#2A3240"/>
 </svg>

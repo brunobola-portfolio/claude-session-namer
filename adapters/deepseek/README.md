@@ -30,6 +30,10 @@ README), so no DeepSeek tokens are spent on titles.
   calling providers. `refresh()` hands it back.
 - Failures (no `claude`, timeout, bad answer) keep the current title; dsh
   never waits for the provider before answering.
+- When dsh cancels the call (a newer message, a refresh, the session ending),
+  the provider stops its `claude -p` at once and the attempt does not count.
+  So `dsh headless` is not held open after its answer, and the call for the
+  newer message generates straight away.
 - `maxTitleBytes` is raised from 80 to 160 bytes so non-ASCII topics are not
   cut.
 
@@ -43,7 +47,7 @@ README), so no DeepSeek tokens are spent on titles.
 Recommended, one line:
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer install deepseek
+npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 install deepseek
 ```
 
 The installer copies the runtime to `~/.session-namer/app/<version>` and adds
@@ -85,7 +89,7 @@ the session list (Web UI sidebar, `--resume` picker) shows
 ## Uninstall
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer uninstall deepseek
+npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 uninstall deepseek
 ```
 
 Or by hand: remove those rows from the profile's `cordis.patch.yml` (or stop
@@ -113,9 +117,25 @@ title providers.
 - Two prompts `ok`, then `Migra as faturas para a V10 e valida os testes`:
   `claude-session-namer` first, then
   `claude-session-namer - Migração de faturas para V10`.
-- Not verified: a full session with a working DeepSeek key. `dsh headless`
-  exits as soon as the main request fails, before the asynchronous title
-  commits. That is a property of the failed run, not of the plugin.
+- Full sessions on 2026-11-04, against a local mock of the DeepSeek Messages
+  API (`DEEPSEEK_BASE_URL=http://127.0.0.1:<port>`, placeholder key), with
+  the adapter installed by `install deepseek` in a temporary git repository.
+  The main request succeeded (`{"type":"final","text":"Done."}`).
+  - With the reply after 6 s, `dsh headless` logged
+    `session/title {"title":"sn-dsh-e2e - Fix Safari login redirect loop","source":{"kind":"provider","provider":"session-namer"}}`
+    before the answer. The session projection kept that title, and a second
+    turn (`--session-id`) kept it with no new model call.
+  - With an instant reply, the turn ended before `claude -p` finished, so
+    dsh closed the session and kept its fallback title
+    (`Fix the login redirect loop`). The provider now stops `claude -p` when
+    dsh cancels the call, and `dsh headless` exits 0.7 s after the answer.
+    Before this fix it waited about 2.5 s for a title dsh then discarded.
+  - So a one-shot `dsh headless` run keeps our title only if the model takes
+    longer to answer than `claude -p` takes to name it (about 2 to 4 s).
+    Long-lived profiles (web, tui, sdk) are not affected.
+- Not verified: the real DeepSeek API. No DeepSeek key was available. The
+  title path does not depend on the model's answer, only on dsh's provider
+  slot, which ran unchanged.
 - Only Windows 11 was tested.
 
 ## Log

@@ -20,7 +20,9 @@ import os from 'node:os';
 import path from 'node:path';
 
 const require = createRequire(import.meta.url);
+const childProcess = require('node:child_process');
 const { makeTitle, projectTitle, defaultGit } = require('../_shared/make-title.js');
+const { generateTopic } = require('../../lib/generate.js');
 const state = require('../../lib/state.js');
 const title = require('../../lib/title.js');
 
@@ -52,6 +54,36 @@ export const MAX_ATTEMPTS = 3;
 export const RETRY_INTERVAL_MS = 60_000;
 const MAX_TRACKED = 500;
 
+const abortError = () => new Error('session-namer: aborted');
+
+/** Stop a `claude -p` child (and, on Windows, its tree). */
+export function killChild(child, { platform = process.platform, spawn = childProcess.spawn } = {}) {
+  try {
+    if (platform === 'win32' && child.pid) {
+      spawn('taskkill', ['/T', '/F', '/PID', String(child.pid)], { stdio: 'ignore', windowsHide: true }).on('error', () => {});
+    }
+    child.kill();
+  } catch { /* already gone */ }
+}
+
+/**
+ * Settle with `promise`, or reject as soon as `signal` aborts. dsh aborts a
+ * provider call on a newer user message, a refresh or session disposal, and
+ * drops any result that arrives afterwards. On teardown it waits for calls
+ * that ignore the signal, and a running `claude -p` child keeps the process
+ * alive, so a `dsh headless` run whose answer came first would wait for it.
+ */
+export function untilAborted(promise, signal) {
+  if (!signal || typeof signal.addEventListener !== 'function') return promise;
+  if (signal.aborted) return Promise.reject(abortError());
+  return new Promise((resolve, reject) => {
+    const onAbort = () => reject(abortError());
+    signal.addEventListener('abort', onAbort, { once: true });
+    const off = () => signal.removeEventListener('abort', onAbort);
+    promise.then((v) => { off(); resolve(v); }, (e) => { off(); reject(e); });
+  });
+}
+
 /**
  * git for one cwd, memoised: dsh calls the provider on every prompt
  * (`all-prompts`), and the repository of a cwd does not change mid-session.
@@ -68,12 +100,14 @@ function memoGit(cwd) {
 
 /**
  * Pure-ish provider factory (dependencies injectable for tests).
+ * `generate` (lib/generate.js) is handed to `make` with a `spawn` that records
+ * the `claude -p` child, so an aborted call can stop it.
  * @param {{make?:Function, project?:Function, env?:object, fallbackCwd?:string,
- *          now?:Function, gitFor?:Function}} deps
+ *          now?:Function, gitFor?:Function, generate?:Function, spawn?:Function, kill?:Function}} deps
  */
 export function createProvider({
   make = makeTitle, project = projectTitle, env = process.env, fallbackCwd = process.cwd(), log = () => {},
-  now = Date.now, gitFor = memoGit,
+  now = Date.now, gitFor = memoGit, generate = generateTopic, spawn = childProcess.spawn, kill = killChild,
 } = {}) {
   const gits = new Map(); // cwd -> memoised git
   const tries = new Map(); // session id -> { attempts, lastAttempt }
@@ -114,9 +148,30 @@ export function createProvider({
         if (!title.isEligiblePrompt(msg.text)) continue;
         if (t.attempts >= MAX_ATTEMPTS) { log(`${sid}: ${MAX_ATTEMPTS} attempts used, project only`); break; }
         if (t.lastAttempt && now() - t.lastAttempt < RETRY_INTERVAL_MS) { log(`${sid}: retry later`); break; }
+        const previous = t.lastAttempt;
         t.attempts += 1;
         t.lastAttempt = now();
-        const r = await make({ prompt: msg.text, cwd, env, git, log: (l) => log(`${sid}: generate ${l}`) });
+        const children = [];
+        const tracked = (...args) => { const c = spawn(...args); children.push(c); return c; };
+        const job = Promise.resolve(make({
+          prompt: msg.text, cwd, env, git, log: (l) => log(`${sid}: generate ${l}`),
+          generate: (opts) => generate({ ...opts, spawn: tracked }),
+        }));
+        let r;
+        try {
+          r = await untilAborted(job, request.signal);
+        } catch (err) {
+          if (request.signal && request.signal.aborted) {
+            // dsh will drop this result: stop `claude -p` now, and do not count the attempt,
+            // so the call dsh makes for the newer message generates at once.
+            for (const c of children) kill(c);
+            job.catch(() => {});
+            t.attempts -= 1;
+            t.lastAttempt = previous;
+            log(`${sid}: aborted by dsh while generating${children.length ? '; claude -p stopped' : ''}`);
+          }
+          throw err;
+        }
         if (r.reason === 'disabled') throw new Error('session-namer: disabled');
         if (r.reason === 'ok') {
           log(`${sid}: title "${r.title}"`);

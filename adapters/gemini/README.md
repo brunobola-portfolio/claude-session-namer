@@ -3,11 +3,11 @@
 Gemini CLI has no supported way to name a session from a hook or extension, so
 this adapter titles the **terminal tab** instead: `<project>` at start, then
 `<project> - <topic>` a few seconds after your first real prompt. Gemini's own
-session list (`/resume`, `--list-sessions`) is not changed. Status: beta.
+session list (`/resume`, `--list-sessions`) is not changed. Status: beta, terminal tab title only.
 
 | Tested with | OS | Date |
 | :-- | :-- | :-- |
-| `@google/gemini-cli` 0.66.0, under ConPTY (Windows Terminal, VS Code terminal) | Windows 11 | 2026-11-03 |
+| `@google/gemini-cli` 0.66.0, under ConPTY (Windows Terminal, VS Code terminal) | Windows 11 | 2026-11-04 |
 
 ## How it works
 
@@ -30,11 +30,22 @@ escapes the job object that would kill it. It sets the title with
 gone, and sets it again. On macOS and Linux the hook writes OSC 0 to
 `/dev/tty`.
 
-Headless runs (`gemini -p "..."`) are skipped unless `name_headless` is on.
-Gemini does not tell hooks whether it runs interactively, so the first hook of
-a session reads the Gemini command line among its parent processes and looks
-for `-p` / `--prompt`. On Windows that costs about 1 s of hidden PowerShell,
-once per session.
+Headless runs are skipped unless `name_headless` is on. Gemini does not tell
+hooks whether it runs interactively: the hook input and environment carry no
+mode flag. So the first hook of a session reads the Gemini command line among
+its parent processes. On Windows that costs about 1 s of hidden PowerShell,
+once per session. A run counts as headless when:
+
+- the command line has `-p` / `--prompt`;
+- the first prompt is exactly the plain words on the command line, as in
+  `gemini "fix the bug"`, which Gemini runs non-interactively (checked at the
+  first `BeforeAgent`);
+- `CI=true` or `GITHUB_ACTIONS=true` is set, which makes Gemini itself
+  headless.
+
+`-i` / `--prompt-interactive` always counts as interactive. A prompt piped on
+stdin with no prompt argument (`echo ... | gemini`) is still treated as
+interactive.
 
 ## Requirements
 
@@ -47,7 +58,7 @@ once per session.
 Recommended, one line:
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer install gemini
+npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 install gemini
 ```
 
 The installer copies the runtime to `~/.session-namer/app/<version>`, adds the
@@ -84,7 +95,7 @@ rest of the run.
 ## Uninstall
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer uninstall gemini
+npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 uninstall gemini
 ```
 
 Or by hand: remove the three hook entries and, if you like,
@@ -101,18 +112,34 @@ The shared options apply: `CLAUDE_SESSION_NAMER=off`, `SESSION_NAMER_MODEL`,
 
 ## Limitations
 
-What was verified on 2026-11-03: Gemini ran under ConPTY (node-pty) with a
-sandboxed `GEMINI_CLI_HOME` and `GEMINI_API_KEY=invalid-placeholder-key`. The
-model call failed with `API_KEY_INVALID`, while the hooks fired before it.
+What was verified on 2026-11-04: Gemini ran under ConPTY, started through the
+npm `gemini` shim in a fresh git repository. It used a sandboxed
+`GEMINI_CLI_HOME` and API-key auth with a placeholder key, and
+`GOOGLE_GEMINI_BASE_URL` pointed at a local mock of the Gemini API. So the
+model call succeeded, and Gemini rendered the mock's reply. `install gemini`
+wrote the hooks into the sandbox, and `uninstall gemini` restored the file
+byte for byte.
 
-- With `hideWindowTitle: true`, the OSC 0 stream showed `claude-session-namer`
-  at start, then `claude-session-namer - Login redirect loop Safari` about 3 s
-  after the prompt. It stayed until the end of the run.
-- With `hideWindowTitle: false`, Gemini wrote `◇  Ready (claude-session-namer)`
-  and `✦  Working… (claude-session-namer)` around our titles.
-- Not verified: macOS and Linux terminals, and a signed-in session.
-- Headless detection only sees `-p` / `--prompt` on the command line. A prompt
-  passed positionally or piped on stdin is treated as interactive.
+- Interactive session: the OSC 0 stream showed `sn-gemini-e2e` at start, then
+  `sn-gemini-e2e - Safari login redirect loop fix` about 3.5 s after the
+  prompt.
+- `gemini "Paginate the customer list endpoint"`: the log read
+  `headless: prompt given on the command line`, and no topic was generated.
+  The tab still showed the project name from `SessionStart`, because the
+  prompt is known only at `BeforeAgent`.
+- `echo ... | gemini` with `CI=true`: the log read `headless: CI=true`, and
+  nothing was titled.
+- `echo ... | gemini` without CI was titled like an interactive session. A
+  hook still cannot detect that case.
+- In these non-interactive runs, Gemini started the `BeforeAgent` hook 31 ms
+  after `SessionStart`, without waiting for it. The adapter then reads the
+  command line in the `BeforeAgent` hook as well and decides there.
+- 2026-11-03: with `hideWindowTitle: false`, Gemini wrote
+  `◇  Ready (claude-session-namer)` and `✦  Working… (claude-session-namer)`
+  around our titles.
+- Not verified: macOS and Linux terminals, and a session with a Google
+  sign-in or a real API key. Only the model endpoint differed from that
+  setup.
 - Only the tab is titled; the saved session keeps Gemini's own summary.
 
 ## Log
