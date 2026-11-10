@@ -4,11 +4,11 @@ One command installs session-namer into one or more AI coding agents. It
 needs Node.js 18+ and nothing else; the installer has no dependencies.
 
 ```
-npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 install <agent...>
-npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 install --detect     # every supported agent found on PATH
-npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 uninstall <agent...|--all>
-npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 status               # what is installed where, versions, problems
-npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 list                 # supported agents + support level
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 install <agent...>
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 install --detect     # every supported agent found on PATH
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 uninstall <agent...|--all>
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 status               # what is installed where, versions, problems
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 list                 # supported agents + support level
 ```
 
 The `#vX.Y.Z` after the repository name pins the release (npm's syntax for a
@@ -102,7 +102,7 @@ rewrites the pointers in place (the old entry is replaced, not duplicated) and
 deletes old `app/<version>` folders that no agent points at any more:
 
 ```
-npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 install <agents>
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 install <agents>
 ```
 
 Agents you did not name keep their version; `status` shows them as
@@ -150,8 +150,8 @@ matches your original except for what Kilo added.
 ## Uninstall
 
 ```
-npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 uninstall codex opencode
-npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 uninstall --all
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 uninstall codex opencode
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 uninstall --all
 ```
 
 `--all` covers every agent whose config points at `~/.session-namer`, plus

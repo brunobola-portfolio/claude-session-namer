@@ -68,7 +68,7 @@ with no prompt argument (`echo ... | qwen`) is still treated as interactive.
 Recommended, one line:
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 install qwen
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 install qwen
 ```
 
 The installer copies the runtime to `~/.session-namer/app/<version>`, adds the
@@ -101,7 +101,7 @@ rest of the run.
 ## Uninstall
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 uninstall qwen
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 uninstall qwen
 ```
 
 Or by hand: remove the three hook entries and, if you like,

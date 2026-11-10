@@ -17,7 +17,7 @@ export async function start(joinSession) {
   let session = null;
   const commands = [{
     name: 'session-name',
-    description: 'Rename this session "<project> - <topic>", or --regenerate the topic',
+    description: 'Rename this session (project - topic), or --regenerate the topic',
     handler: async (ctx) => {
       const msg = namer ? await namer.command(ctx && ctx.args) : 'session-namer is disabled.';
       try { await session.log(msg); } catch { /* ignore */ }

@@ -41,7 +41,7 @@ killed together with its child processes.
 Recommended, one line:
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 install cline
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 install cline
 ```
 
 The installer copies the runtime to `~/.session-namer/app/<version>` and writes
@@ -72,7 +72,7 @@ log has a `final "<project> - <topic>"` line.
 ## Uninstall
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 uninstall cline
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 uninstall cline
 ```
 
 Or by hand, from the repository root:

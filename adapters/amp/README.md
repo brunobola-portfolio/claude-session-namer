@@ -42,7 +42,7 @@ it does not rename and logs why.
 Recommended, one line:
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 install amp
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 install amp
 ```
 
 The installer copies the runtime to `~/.session-namer/app/<version>` and writes
@@ -82,7 +82,7 @@ title becomes `<project> - <topic>`, and the log shows a
 ## Uninstall
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 uninstall amp
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 uninstall amp
 ```
 
 Or by hand: delete `session-namer.js` from the plugin folder

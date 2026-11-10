@@ -1,5 +1,5 @@
 ---
-description: Rename this session ("<project> - <topic>"), regenerate the topic, show Remote Control tips, or run diagnostics.
+description: Rename this session (project - topic), regenerate the topic, show Remote Control tips, or run diagnostics.
 argument-hint: "[topic] | --regenerate | --remote | --doctor"
 ---
 

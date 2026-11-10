@@ -36,10 +36,10 @@ get the same kind of title through their own mechanisms (see
 
 ```bash
 # see what would change (writes nothing)
-npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 install --detect --dry-run
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 install --detect --dry-run
 
 # set up every supported agent found on PATH
-npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 install --detect
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 install --detect
 ```
 
 `--detect` sets up every supported agent on your `PATH`; name them instead to
@@ -212,7 +212,7 @@ More detail, and how to report a vulnerability, in [SECURITY.md](SECURITY.md).
 ## Troubleshooting
 
 Run `/session-name --doctor` in Claude Code, or
-`npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 status` for any agent.
+`npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 status` for any agent.
 
 | Symptom | Likely cause | Fix |
 | :-- | :-- | :-- |
@@ -232,7 +232,7 @@ adapter's README names its own log and checks.
 /plugin marketplace remove claude-session-namer
 ```
 
-or, for any agent, `npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0
+or, for any agent, `npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1
 uninstall --all`. Titles already set stay as they are.
 
 ## Other approaches

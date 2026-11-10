@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-11-10
+
+### Fixed
+
+- **`/session-name` showed `&lt;project&gt; - &lt;topic&gt;` in the Claude
+  Code command menu.** Claude Code HTML-escapes command and plugin
+  descriptions, so the angle brackets came out as entities. The command,
+  plugin, marketplace, Copilot, Pi and goose descriptions now read
+  "project - topic", and a test keeps `<`, `>` and `&` out of them.
+
 ## [1.3.0] - 2026-11-04
 
 ### Added

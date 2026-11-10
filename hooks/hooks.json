@@ -1,5 +1,5 @@
 {
-  "description": "session-namer: automatic \"<project> - <topic>\" session titles",
+  "description": "session-namer: automatic \"project - topic\" session titles",
   "hooks": {
     "SessionStart": [
       {

@@ -53,7 +53,7 @@ behind `/rename` and the dashboard's Ctrl+R.
 Recommended, one line:
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 install grok
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 install grok
 ```
 
 The installer copies the runtime to `~/.session-namer/app/<version>` and writes
@@ -86,7 +86,7 @@ has a `renamed "<project> - <topic>"` line.
 ## Uninstall
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 uninstall grok
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 uninstall grok
 ```
 
 Or by hand: delete `~/.grok/hooks/session-namer.json`. Optional: delete

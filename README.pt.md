@@ -22,10 +22,10 @@ Migra as faturas para a V10 e…      arcva-2.0 - Migração de faturas para V10
 
 ```bash
 # mostra o que vai mudar (não escreve nada)
-npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 install --detect --dry-run
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 install --detect --dry-run
 
 # configura todos os agentes suportados encontrados no PATH
-npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 install --detect
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 install --detect
 ```
 
 O `--detect` configura todos os agentes suportados que estiverem no `PATH`. A maioria não precisa de mais nada; o instalador indica os passos únicos de alguns (no Codex CLI, confiar nos hooks em `/hooks` e arrancar o daemon com `codex app-server daemon start` para ver o título na TUI; no Copilot CLI, `/experimental on`; no Grok, confiar nos hooks uma vez por pasta). `status` mostra o que está instalado e `uninstall` desfaz tudo.

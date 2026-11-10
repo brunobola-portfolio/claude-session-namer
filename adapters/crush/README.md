@@ -50,7 +50,7 @@ seen is treated as yours.
 Recommended, one line:
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 install crush
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 install crush
 ```
 
 The installer copies the runtime to `~/.session-namer/app/<version>` and adds
@@ -87,7 +87,7 @@ shows `<project> - <topic>`; `crush session show <id> --json` shows it as
 ## Uninstall
 
 ```bash
-npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 uninstall crush
+npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 uninstall crush
 ```
 
 Or by hand: remove the `session-namer` entry from `hooks.TurnStart` in
