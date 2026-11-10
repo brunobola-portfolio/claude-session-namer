@@ -4,7 +4,7 @@
 
 Only the latest release receives fixes. Update the Claude Code plugin with
 `/plugin marketplace update claude-session-namer`, and everything else by
-re-running `npx -y github:brunobola-portfolio/claude-session-namer#v1.3.0 install <agent...>`.
+re-running `npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 install <agent...>`.
 
 ## What session-namer does on your machine
 

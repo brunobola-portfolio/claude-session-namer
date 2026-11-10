@@ -2,7 +2,7 @@
   "name": "pi-session-namer",
   "version": "0.1.0",
   "private": true,
-  "description": "Pi extension: names every Pi session \"<project> - <topic>\" from the first prompt (adapter of claude-session-namer).",
+  "description": "Pi extension: names every Pi session \"project - topic\" from the first prompt (adapter of claude-session-namer).",
   "license": "MIT",
   "keywords": ["pi-package"],
   "pi": {
