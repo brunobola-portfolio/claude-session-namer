@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- The npm package is named `session-namer` (the name `claude-session-namer`
+  belongs to someone else on npm) and is no longer private. The Release
+  workflow can publish each tag to npm with provenance through trusted
+  publishing, switched on by the `NPM_PUBLISH` repository variable.
+
 ## [1.3.1] - 2026-11-10
 
 ### Fixed

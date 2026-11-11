@@ -84,6 +84,12 @@ GitHub release with the changelog section as its notes. Claude Code users get
 the update from the marketplace (`/plugin marketplace update
 claude-session-namer`); everyone else re-runs the pinned `npx` command.
 
+The same workflow then publishes the tag to npm as `session-namer`, with
+provenance, through npm trusted publishing (no token in the repository). It
+runs once the repository variable `NPM_PUBLISH` is `true` and the npm package
+lists this repository and `release.yml` as its trusted publisher; a version
+that is already on npm is skipped.
+
 ## Commit messages
 
 Conventional style keeps the changelog easy to write: `feat:`, `fix:`,

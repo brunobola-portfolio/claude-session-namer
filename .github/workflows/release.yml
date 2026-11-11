@@ -60,3 +60,35 @@ jobs:
           else
             gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag --latest
           fi
+
+  # Publishes the same tag to npm as `session-namer`, with provenance, through
+  # npm trusted publishing (OIDC): no npm token is stored in the repository.
+  # Turned on by the repository variable NPM_PUBLISH=true once the package's
+  # trusted publisher (this repo, workflow release.yml) is set on npmjs.com.
+  npm:
+    name: publish to npm
+    needs: release
+    if: vars.NPM_PUBLISH == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Publish session-namer@version (skipped if already on npm)
+        run: |
+          name="$(node -p "require('./package.json').name")"
+          version="$(node -p "require('./package.json').version")"
+          if npm view "$name@$version" version >/dev/null 2>&1; then
+            echo "$name@$version is already on npm"
+          else
+            npm install -g npm@11
+            npm publish --provenance --access public
+          fi
