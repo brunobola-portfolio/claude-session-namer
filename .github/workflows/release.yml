@@ -55,7 +55,7 @@ jobs:
           cat >> notes.md <<EOF
 
           **Install.** In Claude Code: \`/plugin marketplace add brunobola-portfolio/claude-session-namer\` then \`/plugin install session-namer@claude-session-namer\` (update with \`/plugin marketplace update claude-session-namer\`).
-          Any other agent: \`npx -y github:brunobola-portfolio/claude-session-namer#$GITHUB_REF_NAME install --detect\`.
+          Any other agent: \`npx -y session-namer@${GITHUB_REF_NAME#v} install --detect\` ([npm](https://www.npmjs.com/package/session-namer/v/${GITHUB_REF_NAME#v}), published with provenance).
           EOF
           title="$(node scripts/release.js --title)"
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
@@ -66,8 +66,9 @@ jobs:
 
   # Publishes the same tag to npm as `session-namer`, with provenance, through
   # npm trusted publishing (OIDC): no npm token is stored in the repository.
-  # Turned on by the repository variable NPM_PUBLISH=true once the package's
-  # trusted publisher (this repo, workflow release.yml) is set on npmjs.com.
+  # Turned on by the repository variable NPM_PUBLISH=true. The secret NPM_TOKEN
+  # is only for bootstrapping a package that does not exist on npm yet (npm
+  # allows a trusted publisher only on an existing package); delete it after.
   npm:
     name: publish to npm
     needs: release
@@ -88,11 +89,13 @@ jobs:
           registry-url: https://registry.npmjs.org
 
       - name: Publish session-namer@version (skipped if already on npm)
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           name="$(node -p "require('./package.json').name")"
           version="$(node -p "require('./package.json').version")"
-          if ! npm view "$name" name >/dev/null 2>&1; then
-            echo "::error::$name is not on npm yet. Trusted publishing can only be set up for an existing package: publish the first version by hand (see CONTRIBUTING.md, Releasing), add this workflow as its trusted publisher, then re-run this job."
+          if ! npm view "$name" name >/dev/null 2>&1 && [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "::error::$name is not on npm yet, and npm allows a trusted publisher only on an existing package. Add a one-time NPM_TOKEN secret and re-run this job (see CONTRIBUTING.md, Releasing)."
             exit 1
           fi
           if npm view "$name@$version" version >/dev/null 2>&1; then

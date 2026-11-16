@@ -7,6 +7,7 @@
 
 <p align="center">
   <a href="https://github.com/brunobola-portfolio/claude-session-namer/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/brunobola-portfolio/claude-session-namer/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://www.npmjs.com/package/session-namer"><img alt="npm" src="https://img.shields.io/npm/v/session-namer?color=2346D8&label=npm"></a>
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-2346D8"></a>
   <a href="docs/harnesses.md"><img alt="14 agents" src="https://img.shields.io/badge/agents-14-2346D8"></a>
   <img alt="Zero dependencies" src="https://img.shields.io/badge/dependencies-0-2346D8">
@@ -36,10 +37,10 @@ get the same kind of title through their own mechanisms (see
 
 ```bash
 # see what would change (writes nothing)
-npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 install --detect --dry-run
+npx -y session-namer@1.4.0 install --detect --dry-run
 
 # set up every supported agent found on PATH
-npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 install --detect
+npx -y session-namer@1.4.0 install --detect
 ```
 
 `--detect` sets up every supported agent on your `PATH`; name them instead to
@@ -67,7 +68,7 @@ session list (`claude --resume`, `codex resume`, and so on). `status` and
 `/session-name --doctor` show the details.
 
 **Update:** `/plugin marketplace update claude-session-namer` in Claude Code;
-for other agents, run the same `install` command with the newer version tag.
+for other agents, run the same `install` command with the newer version.
 
 ## The problem it solves
 
@@ -212,7 +213,7 @@ More detail, and how to report a vulnerability, in [SECURITY.md](SECURITY.md).
 ## Troubleshooting
 
 Run `/session-name --doctor` in Claude Code, or
-`npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1 status` for any agent.
+`npx -y session-namer@1.4.0 status` for any agent.
 
 | Symptom | Likely cause | Fix |
 | :-- | :-- | :-- |
@@ -232,7 +233,7 @@ adapter's README names its own log and checks.
 /plugin marketplace remove claude-session-namer
 ```
 
-or, for any agent, `npx -y github:brunobola-portfolio/claude-session-namer#v1.3.1
+or, for any agent, `npx -y session-namer@1.4.0
 uninstall --all`. Titles already set stay as they are.
 
 ## Other approaches

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 'use strict';
-// session-namer installer: npx -y github:brunobola-portfolio/claude-session-namer <command>
+// session-namer installer: npx -y session-namer <command>
 const { main } = require('../lib/install');
 
 // `session-namer list | head`: the reader went away; stop quietly.

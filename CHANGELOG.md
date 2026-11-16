@@ -7,10 +7,30 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-16
+
+_Install from npm with provenance, and release notes that get to the point._
+
+### Added
+
+- **Install from npm: `npx -y session-namer install --detect`.** Every release
+  is published from CI with provenance, so `npm audit signatures` traces the
+  package back to its git tag.
+- **`npm fund` and GitHub's Sponsor button point to Ko-fi and Buy Me a
+  Coffee.**
+
 ### Changed
 
-- **Published on npm as `session-namer`, with provenance.** The name
-  `claude-session-namer` is taken on npm, so the package uses the plugin's name.
+- **Docs and the installer's hints use the npm command.** The git form,
+  `npx -y github:brunobola-portfolio/claude-session-namer#vX.Y.Z`, keeps
+  working.
+- **Shorter release notes, titled with a one-line summary.** Every changelog
+  entry follows the [changelog style](docs/changelog-style.md), checked by the
+  tests.
+
+### Security
+
+- **CodeQL scans every pull request and the main branch each week.**
 
 ## [1.3.1] - 2026-11-10
 
