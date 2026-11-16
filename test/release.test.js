@@ -8,7 +8,17 @@ const { spawnSync } = require('node:child_process');
 
 const root = path.join(__dirname, '..');
 const script = path.join(root, 'scripts', 'release.js');
-const { check, cmpSemver, lintChangelog } = require('../scripts/release');
+const { check, cmpSemver, lintChangelog, absoluteLinks } = require('../scripts/release');
+
+test('release notes point relative links at the tag and leave the rest alone', () => {
+  const base = 'https://github.com/brunobola-portfolio/claude-session-namer/blob/v1.4.0';
+  assert.equal(absoluteLinks('[style](docs/changelog-style.md) [a](./adapters/pi/README.md)', 'v1.4.0'),
+    `[style](${base}/docs/changelog-style.md) [a](${base}/adapters/pi/README.md)`);
+  assert.equal(absoluteLinks('[root](/LICENSE) [t](docs/a.md "Title") ![art](docs/assets/x.svg)', 'v1.4.0'),
+    `[root](${base}/LICENSE) [t](${base}/docs/a.md "Title") ![art](https://github.com/brunobola-portfolio/claude-session-namer/raw/v1.4.0/docs/assets/x.svg)`);
+  const keep = '[npm](https://www.npmjs.com/package/session-namer) [top](#install) [mail](mailto:x@y.z) `arr[0](x)`';
+  assert.equal(absoluteLinks(keep, 'v1.4.0'), keep);
+});
 
 const lint = (body, heading = '## [Unreleased]') => lintChangelog(`# Changelog\n\n${heading}\n\n${body}\n\n## [1.0.0] - 2026-01-01\n\n### Added\n\n- **First release.**\n`);
 
@@ -90,6 +100,18 @@ test('release bumps manifests, pins and dates the Unreleased section', () => {
     assert.equal(run(dir, '--check').status, 0);
     assert.equal(run(dir, '--notes').stdout.trim(), '### Fixed\n\n- **A thing.**');
     assert.equal(run(dir, '--title').stdout.trim(), 'v1.2.1 · Small fixes.');
+
+    const npmFooter = run(dir, '--footer', '--npm').stdout;
+    assert.match(npmFooter, /`npx -y session-namer@1\.2\.1 install --detect`/);
+    assert.match(npmFooter, /\*\*Verify\.\*\* \[session-namer@1\.2\.1 on npm\]\(https:\/\/www\.npmjs\.com\/package\/session-namer\/v\/1\.2\.1\)/);
+    assert.match(npmFooter, /\*\*Full changelog:\*\* \[v1\.2\.0\.\.\.v1\.2\.1\]\(https:\/\/github\.com\/brunobola-portfolio\/claude-session-namer\/compare\/v1\.2\.0\.\.\.v1\.2\.1\)/);
+    const gitFooter = run(dir, '--footer').stdout;
+    assert.match(gitFooter, /github:brunobola-portfolio\/claude-session-namer#v1\.2\.1 install --detect/);
+    assert.doesNotMatch(gitFooter, /Verify/, 'no provenance claim when npm did not publish');
+
+    const body = run(dir, '--pr-body').stdout;
+    assert.match(body, /^### Fixed\n\n- \*\*A thing\.\*\*/);
+    assert.match(body, /git tag -a v1\.2\.1 -m v1\.2\.1 && git push origin v1\.2\.1/);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
