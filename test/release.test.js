@@ -14,7 +14,9 @@ test('release notes point relative links at the tag and leave the rest alone', (
   const base = 'https://github.com/brunobola-portfolio/claude-session-namer/blob/v1.4.0';
   assert.equal(absoluteLinks('[style](docs/changelog-style.md) [a](./adapters/pi/README.md)', 'v1.4.0'),
     `[style](${base}/docs/changelog-style.md) [a](${base}/adapters/pi/README.md)`);
-  const keep = '[npm](https://www.npmjs.com/package/session-namer) [top](#install) [mail](mailto:x@y.z) [root](/LICENSE)';
+  assert.equal(absoluteLinks('[root](/LICENSE) [t](docs/a.md "Title") ![art](docs/assets/x.svg)', 'v1.4.0'),
+    `[root](${base}/LICENSE) [t](${base}/docs/a.md "Title") ![art](https://github.com/brunobola-portfolio/claude-session-namer/raw/v1.4.0/docs/assets/x.svg)`);
+  const keep = '[npm](https://www.npmjs.com/package/session-namer) [top](#install) [mail](mailto:x@y.z) `arr[0](x)`';
   assert.equal(absoluteLinks(keep, 'v1.4.0'), keep);
 });
 

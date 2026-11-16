@@ -63,8 +63,8 @@ jobs:
       contents: read
       id-token: write
     outputs:
-      # "true" only when the version can be installed from npm right now.
-      published: ${{ steps.registry.outputs.mode == 'skip' || steps.publish.outputs.published == 'true' }}
+      # "true" only when the version is installable from npm with verified provenance.
+      published: ${{ steps.verify.outcome == 'success' }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -126,7 +126,9 @@ jobs:
       # Fails the release if the version is not served with its provenance
       # attestation (the registry can take a moment to show a new version).
       - name: Verify the version is on npm with provenance
-        if: steps.publish.outputs.published == 'true'
+        id: verify
+        # Also on a re-run that finds the version already published (mode skip).
+        if: steps.registry.outputs.mode == 'skip' || steps.publish.outputs.published == 'true'
         run: |
           spec="$(node -p "const p=require('./package.json'); p.name+'@'+p.version")"
           for i in $(seq 1 18); do

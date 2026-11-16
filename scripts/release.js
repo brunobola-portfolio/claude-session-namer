@@ -80,7 +80,13 @@ const REPO_URL = 'https://github.com/brunobola-portfolio/claude-session-namer';
 
 /** Release notes live outside the repository, so relative links point at the tag. */
 function absoluteLinks(markdown, tag) {
-  return markdown.replace(/\]\((?![a-z][a-z0-9+.-]*:|#|\/)([^)\s]+)\)/gi, (_, rel) => `](${REPO_URL}/blob/${tag}/${rel.replace(/^\.\//, '')})`);
+  const link = /(!?)\[([^\]]*)\]\((?![a-z][a-z0-9+.-]*:|#)([^)\s]+)((?:\s+"[^"]*")?)\)/gi;
+  const rewrite = (text) => text.replace(link, (_, bang, label, target, title) => {
+    const file = target.replace(/^\.?\//, '');
+    return `${bang}[${label}](${REPO_URL}/${bang ? 'raw' : 'blob'}/${tag}/${file}${title})`;
+  });
+  // Inline code is left exactly as written.
+  return markdown.split(/(`[^`\n]*`)/).map((part, i) => (i % 2 ? part : rewrite(part))).join('');
 }
 
 /** "v1.4.0 · <summary line>", or "v1.4.0" when the release has no summary. */
