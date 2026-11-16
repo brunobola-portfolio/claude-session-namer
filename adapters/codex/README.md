@@ -75,7 +75,7 @@ thread simply stays unnamed.
 Recommended, one line:
 
 ```bash
-npx -y session-namer@1.4.2 install codex
+npx -y session-namer@1.4.3 install codex
 ```
 
 The installer copies the runtime to `~/.session-namer/app/<version>` and adds
@@ -133,7 +133,7 @@ the same name.
 ## Uninstall
 
 ```bash
-npx -y session-namer@1.4.2 uninstall codex
+npx -y session-namer@1.4.3 uninstall codex
 ```
 
 Or by hand:

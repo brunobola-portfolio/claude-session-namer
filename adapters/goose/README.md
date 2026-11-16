@@ -67,7 +67,7 @@ code.
 Recommended, one line:
 
 ```bash
-npx -y session-namer@1.4.2 install goose
+npx -y session-namer@1.4.3 install goose
 ```
 
 The installer copies the runtime to `~/.session-namer/app/<version>` and links
@@ -99,7 +99,7 @@ Start a new `goose session` and send a real prompt. A few seconds later
 ## Uninstall
 
 ```bash
-npx -y session-namer@1.4.2 uninstall goose
+npx -y session-namer@1.4.3 uninstall goose
 ```
 
 Or by hand, removing only the link:
