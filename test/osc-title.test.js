@@ -24,11 +24,13 @@ const charDev = (uid = UID) => ({ isCharacterDevice: () => true, uid });
 /** Recording fs for writeTtyDevice / writeTerminalTitle. `devTty` false: /dev/tty fails with ENXIO. */
 function fakeFs({ devTty = false, stat = () => charDev(), openFails = false, writeFails = false } = {}) {
   const log = [];
+  let opened = null;
   return {
     log,
-    statSync: (p) => { log.push(['stat', p]); return stat(p); },
+    fstatSync: (fd) => { log.push(['fstat', fd]); return stat(opened); },
     openSync: (p, flags) => {
       log.push(['open', p, flags]);
+      opened = p;
       if (p === '/dev/tty' && !devTty) throw Object.assign(new Error('ENXIO'), { code: 'ENXIO' });
       if (openFails) throw Object.assign(new Error('EACCES'), { code: 'EACCES' });
       return 9;
@@ -95,8 +97,8 @@ test('writeTtyDevice: only a character device owned by the current user, opened 
   const ok = fakeFs();
   assert.equal(osc.writeTtyDevice('/dev/pts/4', SEQ, { uid: UID, ...ok }), true);
   assert.deepEqual(ok.log, [
-    ['stat', '/dev/pts/4'],
     ['open', '/dev/pts/4', CONSTANTS.O_WRONLY | CONSTANTS.O_NOCTTY | CONSTANTS.O_NONBLOCK],
+    ['fstat', 9],
     ['write', 9, SEQ],
     ['close', 9],
   ]);
@@ -105,13 +107,16 @@ test('writeTtyDevice: only a character device owned by the current user, opened 
   assert.equal(osc.writeTtyDevice('/dev/pts/4', SEQ, { uid: UID, ...notChar }), false);
   const foreign = fakeFs({ stat: () => charDev(0) });
   assert.equal(osc.writeTtyDevice('/dev/pts/4', SEQ, { uid: UID, ...foreign }), false);
-  for (const f of [notChar, foreign]) assert.ok(!f.log.some(([op]) => op === 'open'), 'never opened');
+  for (const f of [notChar, foreign]) {
+    assert.ok(!f.log.some(([op]) => op === 'write'), 'never written');
+    assert.deepEqual(f.log.at(-1), ['close', 9], 'closed again');
+  }
 
   const strange = fakeFs();
   for (const dev of ['/etc/passwd', '/dev/pts/4/../../sda', 'pts/4', '/dev/console']) {
     assert.equal(osc.writeTtyDevice(dev, SEQ, { uid: UID, ...strange }), false, dev);
   }
-  assert.deepEqual(strange.log, [], 'not even stat-ed');
+  assert.deepEqual(strange.log, [], 'not even opened');
   assert.equal(osc.writeTtyDevice('/dev/pts/4', SEQ, { uid: null, ...strange }), false);
 
   const missing = fakeFs({ stat: () => { throw new Error('ENOENT'); } });
@@ -143,8 +148,8 @@ test('writeTerminalTitle (POSIX, detached): falls back to the ancestor terminal 
   assert.equal(ok, true);
   assert.deepEqual(f.log, [
     ['open', '/dev/tty', 'w'],
-    ['stat', '/dev/ttys003'],
     ['open', '/dev/ttys003', CONSTANTS.O_WRONLY | CONSTANTS.O_NOCTTY | CONSTANTS.O_NONBLOCK],
+    ['fstat', 9],
     ['write', 9, SEQ],
     ['close', 9],
   ]);
@@ -156,7 +161,7 @@ test('writeTerminalTitle (POSIX, worker): uses the inherited device, re-walks wh
   const env = { [osc.TTY_ENV]: '/dev/pts/4' };
   const noWalk = () => { throw new Error('must not walk'); };
   assert.equal(osc.writeTerminalTitle('proj - Topic', { platform: 'linux', env, proc: { ppid: 1, getuid: () => UID }, ...f, spawnSync: noWalk }), true);
-  assert.deepEqual(f.log.slice(1).map((e) => e.slice(0, 2)), [['stat', '/dev/pts/4'], ['open', '/dev/pts/4'], ['write', 9], ['close', 9]]);
+  assert.deepEqual(f.log.slice(1).map((e) => e.slice(0, 2)), [['open', '/dev/pts/4'], ['fstat', 9], ['write', 9], ['close', 9]]);
 
   const stale = fakeFs({ stat: (p) => (p === '/dev/pts/4' ? charDev(0) : charDev()) });
   const env2 = { [osc.TTY_ENV]: '/dev/pts/4' };
@@ -175,7 +180,7 @@ test('writeTerminalTitle (POSIX): no terminal anywhere, or not ours, means false
   assert.equal(osc.writeTerminalTitle('t', { platform: 'linux', env, proc: { ppid: 300, getuid: () => UID }, ...none, spawnSync: fakePs({ 300: '1 ?' }) }), false);
   const foreign = fakeFs({ stat: () => charDev(0) });
   assert.equal(osc.writeTerminalTitle('t', { platform: 'linux', env, proc: { ppid: 300, getuid: () => UID }, ...foreign, spawnSync: fakePs({ 300: '1 pts/0' }) }), false);
-  assert.ok(!foreign.log.some(([op, p]) => op === 'open' && p === '/dev/pts/0'));
+  assert.ok(!foreign.log.some(([op]) => op === 'write'), 'a terminal that is not ours is never written');
   const noUid = fakeFs();
   assert.equal(osc.writeTerminalTitle('t', { platform: 'linux', env, proc: { ppid: 300 }, ...noUid, spawnSync: fakePs({ 300: '1 pts/0' }) }), false);
   assert.deepEqual(env, {});

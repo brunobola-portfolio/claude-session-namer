@@ -11,14 +11,16 @@
  * --check also lints the changelog against docs/changelog-style.md.
  *
  * The version lives in package.json, .claude-plugin/plugin.json and
- * .claude-plugin/marketplace.json; the docs pin it as `claude-session-namer#vX.Y.Z`.
+ * .claude-plugin/marketplace.json; the docs pin it as `session-namer@X.Y.Z`
+ * (npm) or `claude-session-namer#vX.Y.Z` (git tag).
  */
 const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT = process.env.SESSION_NAMER_RELEASE_ROOT || path.join(__dirname, '..');
 const SEMVER = /^\d+\.\d+\.\d+$/;
-const PIN_RE = /claude-session-namer#v(\d+\.\d+\.\d+)/g;
+/** An install pin: `session-namer@1.4.0` (npm) or `claude-session-namer#v1.4.0` (git tag). */
+const PIN_RE = /(\bsession-namer@|claude-session-namer#v)(\d+\.\d+\.\d+)/g;
 const MANIFESTS = ['package.json', '.claude-plugin/plugin.json', '.claude-plugin/marketplace.json'];
 
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
@@ -58,7 +60,8 @@ function manifestVersions(rel) {
 
 function changelogSection(version) {
   const text = read('CHANGELOG.md').replace(/\r\n/g, '\n');
-  const head = new RegExp(`^## \\[${version.replace(/\./g, '\\.')}\\] - (\\d{4}-\\d{2}-\\d{2})$`, 'm');
+  const escaped = version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const head = new RegExp(`^## \\[${escaped}\\] - (\\d{4}-\\d{2}-\\d{2})$`, 'm');
   const m = head.exec(text);
   if (!m) return null;
   const rest = text.slice(m.index + m[0].length);
@@ -160,7 +163,7 @@ function check() {
     for (const [where, v] of manifestVersions(rel)) if (v !== version) problems.push(`${where} is ${v}, expected ${version}`);
   }
   for (const rel of pinnedDocs()) {
-    for (const m of read(rel).matchAll(PIN_RE)) if (m[1] !== version) problems.push(`${rel} pins v${m[1]}, expected v${version}`);
+    for (const m of read(rel).matchAll(PIN_RE)) if (m[2] !== version) problems.push(`${rel} pins v${m[2]}, expected v${version}`);
   }
   const section = changelogSection(version);
   if (!section) problems.push(`CHANGELOG.md has no "## [${version}] - YYYY-MM-DD" entry`);
@@ -188,7 +191,7 @@ function bump(next, today = new Date().toISOString().slice(0, 10)) {
   }
   for (const rel of pinnedDocs()) {
     const before = read(rel);
-    const after = before.replace(PIN_RE, `claude-session-namer#v${next}`);
+    const after = before.replace(PIN_RE, (_, prefix) => `${prefix}${next}`);
     if (after !== before) { write(rel, after); changed.push(rel); }
   }
 

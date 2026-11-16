@@ -136,7 +136,7 @@ function claim(dir, key, now) {
   const release = () => { try { fs.unlinkSync(file); } catch { /* gone */ } };
   for (let i = 0; i < 2; i += 1) {
     try {
-      fs.writeFileSync(file, String(now()), { flag: 'wx' });
+      fs.writeFileSync(file, String(now()), { flag: 'wx', mode: 0o600 });
       return release;
     } catch (err) {
       if (!err || err.code !== 'EEXIST') return () => {}; // no lock possible: proceed unguarded

@@ -667,7 +667,7 @@ test('status: counts every printed problem, aligns columns, clips long versions,
   const cols = st.out.split('\n').filter((s) => /^[✓–✗] /.test(s)).map((s) => s.search(/not installed|installed/));
   assert.equal(new Set(cols).size, 1, `columns line up:\n${st.out}`);
   assert.match(st.out, /✓ cline[\s\S]*?→ check: `cline history`/);
-  assert.match(st.out, /– crush[^\n]*\n\s+→ install with: npx -y github:brunobola-portfolio\/claude-session-namer#v1\.0\.0 install crush/);
+  assert.match(st.out, /– crush[^\n]*\n\s+→ install with: npx -y session-namer@1\.0\.0 install crush/);
   assert.doesNotMatch(st.out, /runtime|harness/i);
 });
 
@@ -681,12 +681,12 @@ test('--dry-run and status only run `--version` and `claude plugin list --json`'
   assert.deepEqual(fs.readdirSync(sb.home), []);
 });
 
-test('help: no arguments prints it with exit 0, npx form, #tag pin and the docs URL', async () => {
+test('help: no arguments prints it with exit 0, npx form, version pin and the docs URL', async () => {
   const sb = sandbox();
   const r = await cli(sb, []);
   assert.equal(r.code, 0);
-  assert.match(r.out, /npx -y github:brunobola-portfolio\/claude-session-namer#v\d+\.\d+\.\d+ <command>/);
-  assert.match(r.out, /without #v\d+\.\d+\.\d+, npx runs the latest code on main/);
+  assert.match(r.out, /npx -y session-namer@\d+\.\d+\.\d+ <command>/);
+  assert.match(r.out, /session-namer@latest runs the newest release/);
   assert.match(r.out, /https:\/\/github\.com\/brunobola-portfolio\/claude-session-namer\/blob\/v\d+\.\d+\.\d+\/docs\/install\.md/);
   assert.match(r.out, /install <agent\.\.\.>/);
   assert.doesNotMatch(r.out, /harness/i);

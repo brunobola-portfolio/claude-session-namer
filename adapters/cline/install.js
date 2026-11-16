@@ -37,11 +37,17 @@ function install(dir, hookPath = path.join(__dirname, 'hook.js')) {
   const done = [];
   for (const name of HOOK_FILES) {
     const file = path.join(dir, name);
-    if (fs.existsSync(file) && !isOurs(file)) {
-      done.push(`skipped ${file} (exists and is not ours)`);
-      continue;
+    // Create exclusively; replace an existing file only when it is our own stub.
+    try {
+      fs.writeFileSync(file, stubSource(hookPath), { mode: 0o755, flag: 'wx' });
+    } catch (err) {
+      if (!err || err.code !== 'EEXIST') throw err;
+      if (!isOurs(file)) {
+        done.push(`skipped ${file} (exists and is not ours)`);
+        continue;
+      }
+      fs.writeFileSync(file, stubSource(hookPath), { mode: 0o755 });
     }
-    fs.writeFileSync(file, stubSource(hookPath), { mode: 0o755 });
     fs.chmodSync(file, 0o755);
     done.push(`wrote ${file}`);
   }

@@ -71,15 +71,15 @@ a pull request:
 ## Releasing (maintainer)
 
 One command bumps the version in `package.json`, `.claude-plugin/plugin.json`
-and `.claude-plugin/marketplace.json`, updates every `#vX.Y.Z` install pin in
-the docs and dates the `Unreleased` changelog section:
+and `.claude-plugin/marketplace.json`, updates every `session-namer@X.Y.Z`
+install pin in the docs and dates the `Unreleased` changelog section:
 
 ```bash
-npm run release -- 1.3.0       # prints the exact git and gh commands to run next
+npm run release -- 1.4.0       # prints the exact git and gh commands to run next
 ```
 
 Open the release PR, merge it, then tag the merge commit on `main`
-(`git tag -a v1.3.0 -m v1.3.0 && git push origin v1.3.0`). The
+(`git tag -a v1.4.0 -m v1.4.0 && git push origin v1.4.0`). The
 [Release workflow](.github/workflows/release.yml) refuses a tag that does not
 match the manifests or is not on `main`, runs the tests and publishes the
 GitHub release with the changelog section as its notes. Claude Code users get
@@ -87,24 +87,22 @@ the update from the marketplace (`/plugin marketplace update
 claude-session-namer`); everyone else re-runs the pinned `npx` command.
 
 The same workflow then publishes the tag to npm as `session-namer`, with
-provenance, through npm trusted publishing (no token in the repository). It
-runs once the repository variable `NPM_PUBLISH` is `true` and the npm package
-lists this repository and `release.yml` as its trusted publisher; a version
-that is already on npm is skipped.
+provenance, through npm trusted publishing: no token is stored in the
+repository. It runs while the repository variable `NPM_PUBLISH` is `true`; a
+version that is already on npm is skipped. Check a published version with
+`npm view session-namer@X.Y.Z dist.attestations` or `npm audit signatures`.
 
-npm only lets you add a trusted publisher to a package that already exists, so
-the very first version is published by hand, once:
+**Setting it up for a new package (done once, for 1.4.0).** npm allows a
+trusted publisher only on a package that already exists, so the first version
+is published with a short-lived token, still from CI and with provenance:
 
-```bash
-git switch main && git pull && git checkout vX.Y.Z   # the first tag whose package.json says "session-namer"
-npm login && npm publish --access public             # asks for your 2FA code
-```
-
-Then on npmjs.com, package `session-namer` → Settings → Trusted publishing,
-add GitHub Actions with repository `brunobola-portfolio/claude-session-namer`
-and workflow `release.yml`; set publishing access to "Require two-factor
-authentication and disallow tokens"; and set the repository variable with
-`gh variable set NPM_PUBLISH --body true`. Every later tag publishes itself.
+1. `gh secret set NPM_TOKEN` (a granular npm token with publish rights) and
+   `gh variable set NPM_PUBLISH --body true`, then push the tag.
+2. Link the workflow: `npm trust github session-namer --repo
+   brunobola-portfolio/claude-session-namer --file release.yml` (npm 11.10+),
+   or on npmjs.com under package settings → Trusted publishing.
+3. `gh secret delete NPM_TOKEN`, revoke the token on npmjs.com, and set
+   publishing access to "Require two-factor authentication and disallow tokens".
 
 ## Commit messages
 

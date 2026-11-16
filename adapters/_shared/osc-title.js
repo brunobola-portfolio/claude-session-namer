@@ -122,18 +122,19 @@ function ancestorTtyDevice(startPid, {
  * POSIX: write `seq` to `device` if it is a terminal device of the current
  * user (character device, owned by `uid`). Opened write-only with O_NOCTTY,
  * so it never becomes our controlling terminal, and O_NONBLOCK, so a stopped
- * terminal cannot hang the hook.
+ * terminal cannot hang the hook. The check runs on the open descriptor
+ * (fstat), so the path cannot be swapped between the check and the write.
  */
 function writeTtyDevice(device, seq, {
-  uid, statSync = fs.statSync, openSync = fs.openSync, writeSync = fs.writeSync, closeSync = fs.closeSync,
+  uid, fstatSync = fs.fstatSync, openSync = fs.openSync, writeSync = fs.writeSync, closeSync = fs.closeSync,
   constants = fs.constants,
 } = {}) {
   if (!seq || !TTY_DEVICE_RE.test(String(device)) || !Number.isInteger(uid)) return false;
   let fd;
   try {
-    const st = statSync(device);
-    if (!st.isCharacterDevice() || st.uid !== uid) return false;
     fd = openSync(device, constants.O_WRONLY | (constants.O_NOCTTY || 0) | (constants.O_NONBLOCK || 0));
+    const st = fstatSync(fd);
+    if (!st.isCharacterDevice() || st.uid !== uid) return false;
     writeSync(fd, seq);
     return true;
   } catch {
@@ -151,7 +152,7 @@ function writeTtyDevice(device, seq, {
  */
 function writeTerminalTitle(title, {
   platform = process.platform, proc = process, startPid = null, spawnSync = childProcess.spawnSync,
-  openSync = fs.openSync, writeSync = fs.writeSync, closeSync = fs.closeSync, statSync = fs.statSync,
+  openSync = fs.openSync, writeSync = fs.writeSync, closeSync = fs.closeSync, fstatSync = fs.fstatSync,
   constants = fs.constants, env = process.env, now = Date.now,
 } = {}) {
   const clean = cleanTitle(title);
@@ -178,7 +179,7 @@ function writeTerminalTitle(title, {
   }
   let uid = null;
   try { uid = typeof proc.getuid === 'function' ? proc.getuid() : null; } catch { uid = null; }
-  const io = { uid, statSync, openSync, writeSync, closeSync, constants };
+  const io = { uid, fstatSync, openSync, writeSync, closeSync, constants };
   const hinted = env ? env[TTY_ENV] : undefined;
   if (hinted && writeTtyDevice(hinted, seq, io)) return true;
   const device = ancestorTtyDevice(proc.ppid, { spawnSync, now });
