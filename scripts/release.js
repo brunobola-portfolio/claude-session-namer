@@ -83,6 +83,37 @@ function absoluteLinks(markdown, tag) {
   return markdown.replace(/\]\((?![a-z][a-z0-9+.-]*:|#|\/)([^)\s]+)\)/gi, (_, rel) => `](${REPO_URL}/blob/${tag}/${rel.replace(/^\.\//, '')})`);
 }
 
+/** "v1.4.0 · <summary line>", or "v1.4.0" when the release has no summary. */
+function releaseTitle() {
+  const version = JSON.parse(read('package.json')).version;
+  const section = changelogSection(version);
+  return `v${version}${section && section.summary ? ` · ${section.summary}` : ''}`;
+}
+
+/** The release before `version` in CHANGELOG.md, or null for the first one. */
+function previousVersion(version) {
+  const versions = [...read('CHANGELOG.md').matchAll(/^## \[(\d+\.\d+\.\d+)\]/gm)].map((m) => m[1]);
+  const i = versions.indexOf(version);
+  return i === -1 ? null : versions[i + 1] || null;
+}
+
+/** Install, verify and compare lines appended to every GitHub release. */
+function releaseFooter(version, { npm = false } = {}) {
+  const prev = previousVersion(version);
+  const lines = [
+    '---',
+    '',
+    `**Install.** Claude Code: \`/plugin marketplace add brunobola-portfolio/claude-session-namer\`, then \`/plugin install session-namer@claude-session-namer\` (update with \`/plugin marketplace update claude-session-namer\`). Any other agent: ${npm
+      ? `\`npx -y session-namer@${version} install --detect\``
+      : `\`npx -y github:brunobola-portfolio/claude-session-namer#v${version} install --detect\``}.`,
+  ];
+  if (npm) {
+    lines.push('', `**Verify.** [session-namer@${version} on npm](https://www.npmjs.com/package/session-namer/v/${version}) is published from this tag by GitHub Actions with provenance; \`npm audit signatures\` checks it.`);
+  }
+  if (prev) lines.push('', `**Full changelog:** [v${prev}...v${version}](${REPO_URL}/compare/v${prev}...v${version})`);
+  return lines.join('\n');
+}
+
 /* Changelog style (docs/changelog-style.md), enforced on every entry. */
 const SECTIONS = ['Added', 'Changed', 'Deprecated', 'Removed', 'Fixed', 'Security'];
 const SUMMARY_RE = /^_([^_].*[^_]|[^_])_$/;
@@ -233,13 +264,30 @@ function main(argv) {
     return 0;
   }
   if (arg === '--title') {
+    process.stdout.write(`${releaseTitle()}\n`);
+    return 0;
+  }
+  if (arg === '--footer') {
+    process.stdout.write(`${releaseFooter(JSON.parse(read('package.json')).version, { npm: argv.includes('--npm') })}\n`);
+    return 0;
+  }
+  if (arg === '--pr-body') {
     const version = JSON.parse(read('package.json')).version;
     const section = changelogSection(version);
-    process.stdout.write(`v${version}${section && section.summary ? ` · ${section.summary}` : ''}\n`);
+    if (!section) { process.stderr.write(`No changelog entry for ${version}\n`); return 1; }
+    process.stdout.write(`${absoluteLinks(section.notes, 'main')}
+
+## Checklist
+
+- [ ] \`npm test\` and \`npm run release:check\` pass
+- [ ] The notes above read well as the GitHub release (they are published as written)
+
+After merge: \`git switch main && git pull && git tag -a v${version} -m v${version} && git push origin v${version}\`.
+`);
     return 0;
   }
   if (!arg || arg === '-h' || arg === '--help') {
-    process.stdout.write('Usage: node scripts/release.js <X.Y.Z> | --check | --notes\n');
+    process.stdout.write('Usage: node scripts/release.js <X.Y.Z> | --check | --notes | --title | --footer [--npm] | --pr-body\n');
     return arg ? 0 : 1;
   }
   try {
@@ -250,7 +298,8 @@ function main(argv) {
     process.stdout.write(`
 Next steps:
   git switch -c release/v${next} && git commit -am "Release ${next}"
-  git push -u origin release/v${next} && gh pr create --fill
+  git push -u origin release/v${next}
+  node scripts/release.js --pr-body | gh pr create --title "$(node scripts/release.js --title | sed 's/^v/Release /')" --body-file -
   # after the PR is merged into main:
   git switch main && git pull && git tag -a v${next} -m v${next} && git push origin v${next}
   # the Release workflow checks the tag, runs the tests and publishes the GitHub release.
@@ -264,4 +313,4 @@ Next steps:
 
 if (require.main === module) process.exitCode = main(process.argv.slice(2));
 
-module.exports = { check, bump, changelogSection, lintChangelog, absoluteLinks, pinnedDocs, cmpSemver, PIN_RE, LIMITS };
+module.exports = { check, bump, changelogSection, lintChangelog, absoluteLinks, releaseFooter, previousVersion, pinnedDocs, cmpSemver, PIN_RE, LIMITS };

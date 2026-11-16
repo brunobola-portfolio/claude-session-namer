@@ -98,6 +98,18 @@ test('release bumps manifests, pins and dates the Unreleased section', () => {
     assert.equal(run(dir, '--check').status, 0);
     assert.equal(run(dir, '--notes').stdout.trim(), '### Fixed\n\n- **A thing.**');
     assert.equal(run(dir, '--title').stdout.trim(), 'v1.2.1 · Small fixes.');
+
+    const npmFooter = run(dir, '--footer', '--npm').stdout;
+    assert.match(npmFooter, /`npx -y session-namer@1\.2\.1 install --detect`/);
+    assert.match(npmFooter, /\*\*Verify\.\*\* \[session-namer@1\.2\.1 on npm\]\(https:\/\/www\.npmjs\.com\/package\/session-namer\/v\/1\.2\.1\)/);
+    assert.match(npmFooter, /\*\*Full changelog:\*\* \[v1\.2\.0\.\.\.v1\.2\.1\]\(https:\/\/github\.com\/brunobola-portfolio\/claude-session-namer\/compare\/v1\.2\.0\.\.\.v1\.2\.1\)/);
+    const gitFooter = run(dir, '--footer').stdout;
+    assert.match(gitFooter, /github:brunobola-portfolio\/claude-session-namer#v1\.2\.1 install --detect/);
+    assert.doesNotMatch(gitFooter, /Verify/, 'no provenance claim when npm did not publish');
+
+    const body = run(dir, '--pr-body').stdout;
+    assert.match(body, /^### Fixed\n\n- \*\*A thing\.\*\*/);
+    assert.match(body, /git tag -a v1\.2\.1 -m v1\.2\.1 && git push origin v1\.2\.1/);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
