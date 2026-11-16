@@ -94,14 +94,17 @@ version that is already on npm is skipped. Check a published version with
 
 **Setting it up for a new package (done once, for 1.4.0).** npm allows a
 trusted publisher only on a package that already exists, so the first version
-is published with a short-lived token, still from CI and with provenance:
+is staged from CI with a short-lived token, still with provenance:
 
 1. `gh secret set NPM_TOKEN` (a granular npm token with publish rights) and
-   `gh variable set NPM_PUBLISH --body true`, then push the tag.
-2. Link the workflow: `npm trust github session-namer --repo
-   brunobola-portfolio/claude-session-namer --file release.yml` (npm 11.10+),
-   or on npmjs.com under package settings → Trusted publishing.
-3. `gh secret delete NPM_TOKEN`, revoke the token on npmjs.com, and set
+   `gh variable set NPM_PUBLISH --body true`, then push the tag. The workflow
+   runs `npm stage publish`.
+2. Approve the staged version with 2FA on npmjs.com, or with `npm stage list`
+   and `npm stage approve <id>` (npm 12).
+3. Link the workflow: `npm trust github session-namer --repo
+   brunobola-portfolio/claude-session-namer --file release.yml` (npm 12), or
+   on npmjs.com under package settings → Trusted publishing.
+4. `gh secret delete NPM_TOKEN`, revoke the token on npmjs.com, and set
    publishing access to "Require two-factor authentication and disallow tokens".
 
 ## Commit messages
