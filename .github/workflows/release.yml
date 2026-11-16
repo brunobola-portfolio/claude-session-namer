@@ -72,10 +72,12 @@ jobs:
           node-version: 24
           registry-url: https://registry.npmjs.org
 
-      # Trusted publishing (OIDC) needs npm 11.5.1+. Pinned, no install scripts,
-      # and run before any credential is in the environment.
-      - name: Install npm 11.6.2
-        run: npm install -g npm@11.6.2 --ignore-scripts
+      # Trusted publishing (OIDC) needs npm 11.5.1+, staged publishing npm 12.
+      # Pinned, no install scripts, and run before any credential is in the environment.
+      - name: Install npm 12.2.2
+        run: |
+          npm install -g npm@12.2.2 --ignore-scripts
+          echo "node $(node -v), npm $(npm -v)"
 
       # Decides how to publish, failing closed: "oidc" when the package exists,
       # "bootstrap" only on a confirmed 404, "skip" when the version is out.
@@ -103,11 +105,17 @@ jobs:
           # The token is used only to create a package npm does not have yet.
           NODE_AUTH_TOKEN: ${{ steps.registry.outputs.mode == 'bootstrap' && secrets.NPM_TOKEN || '' }}
         run: |
-          if [ "${{ steps.registry.outputs.mode }}" = bootstrap ] && [ -z "$NODE_AUTH_TOKEN" ]; then
-            echo "::error::session-namer is not on npm yet, and npm allows a trusted publisher only on an existing package. Add a one-time NPM_TOKEN secret and re-run this job (see CONTRIBUTING.md, Releasing)."
-            exit 1
+          if [ "${{ steps.registry.outputs.mode }}" = bootstrap ]; then
+            if [ -z "$NODE_AUTH_TOKEN" ]; then
+              echo "::error::session-namer is not on npm yet, and npm allows a trusted publisher only on an existing package. Add a one-time NPM_TOKEN secret and re-run this job (see CONTRIBUTING.md, Releasing)."
+              exit 1
+            fi
+            # A new package's first version is staged; a maintainer approves it with 2FA.
+            npm stage publish --provenance --access public --ignore-scripts
+            echo "::notice::Staged with provenance. Approve it with 2FA on npmjs.com (or \`npm stage list\` then \`npm stage approve <id>\`) to publish it."
+          else
+            npm publish --provenance --access public --ignore-scripts
           fi
-          npm publish --provenance --access public --ignore-scripts
 
   release:
     name: publish GitHub release
