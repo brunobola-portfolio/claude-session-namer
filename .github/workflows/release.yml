@@ -89,14 +89,14 @@ jobs:
         run: |
           name="$(node -p "require('./package.json').name")"
           version="$(node -p "require('./package.json').version")"
-          if out="$(npm view "$name@$version" version 2>&1)"; then
+          if out="$(npm view --prefer-online "$name@$version" version 2>&1)"; then
             if [ -n "$out" ]; then echo "$name@$version is already on npm"; echo "mode=skip" >> "$GITHUB_OUTPUT"; exit 0; fi
           elif ! grep -q E404 <<<"$out"; then
             echo "::error::npm view failed: $out"; exit 1
           fi
-          if npm view "$name" name >/dev/null 2>&1; then
+          if npm view --prefer-online "$name" name >/dev/null 2>&1; then
             echo "mode=oidc" >> "$GITHUB_OUTPUT"
-          elif grep -q E404 <<<"$(npm view "$name" name 2>&1)"; then
+          elif grep -q E404 <<<"$(npm view --prefer-online "$name" name 2>&1)"; then
             echo "mode=bootstrap" >> "$GITHUB_OUTPUT"
           else
             echo "::error::could not tell whether $name exists on npm"; exit 1
@@ -124,7 +124,8 @@ jobs:
           fi
 
       # Fails the release if the version is not served with its provenance
-      # attestation (the registry can take a moment to show a new version).
+      # attestation. --prefer-online skips npm's local metadata cache: the
+      # registry check above cached the package before this version existed.
       - name: Verify the version is on npm with provenance
         id: verify
         # Also on a re-run that finds the version already published (mode skip).
@@ -132,7 +133,7 @@ jobs:
         run: |
           spec="$(node -p "const p=require('./package.json'); p.name+'@'+p.version")"
           for i in $(seq 1 18); do
-            if [ "$(npm view "$spec" dist.attestations.provenance.predicateType 2>/dev/null)" = "https://slsa.dev/provenance/v1" ]; then
+            if [ "$(npm view --prefer-online "$spec" dist.attestations.provenance.predicateType 2>/dev/null)" = "https://slsa.dev/provenance/v1" ]; then
               echo "$spec is on npm with SLSA provenance"; exit 0
             fi
             sleep 10
