@@ -99,11 +99,17 @@ is staged from CI with a short-lived token, still with provenance:
 1. `gh secret set NPM_TOKEN` (a granular npm token with publish rights) and
    `gh variable set NPM_PUBLISH --body true`, then push the tag. The workflow
    runs `npm stage publish`.
-2. Approve the staged version with 2FA on npmjs.com, or with `npm stage list`
-   and `npm stage approve <id>` (npm 12).
-3. Link the workflow: `npm trust github session-namer --repo
-   brunobola-portfolio/claude-session-namer --file release.yml` (npm 12), or
-   on npmjs.com under package settings → Trusted publishing.
+2. Approve the staged version on npmjs.com, or with `npm stage list` and
+   `npm stage approve <id> --otp <code>` (npm 12). Then re-run the Release
+   workflow (`gh run rerun <run-id>`): it finds the version on npm and
+   publishes the GitHub release.
+3. Link the workflow on npmjs.com (package settings → Trusted publishing →
+   GitHub Actions, workflow `release.yml`) or with `npm trust github
+   session-namer --repository brunobola-portfolio/claude-session-namer --file
+   release.yml --allow-publish --otp <code>`.
+
+Approving, linking and changing owners all need the npm account's 2FA code;
+tokens cannot do them.
 4. `gh secret delete NPM_TOKEN`, revoke the token on npmjs.com, and set
    publishing access to "Require two-factor authentication and disallow tokens".
 

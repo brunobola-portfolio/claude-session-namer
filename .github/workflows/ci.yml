@@ -45,6 +45,19 @@ jobs:
         run: |
           node scripts/build-assets.js
           test -z "$(git status --porcelain -- docs/assets)" || { git status --porcelain -- docs/assets; exit 1; }
+      - name: npm package ships the runtime and nothing else
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 24
+        run: |
+          npm pack --dry-run --json --ignore-scripts > pack.json
+          node -e '
+            const [p] = require("./pack.json");
+            const files = p.files.map((f) => f.path);
+            const extra = files.filter((f) => /^(test|docs|scripts|\.github)\//.test(f));
+            const need = ["bin/session-namer.js", "lib/install/index.js", "hooks/namer.js", ".claude-plugin/plugin.json", "README.md", "LICENSE", "CHANGELOG.md"];
+            const missing = need.filter((f) => !files.includes(f));
+            if (extra.length || missing.length) { console.error({ extra, missing }); process.exit(1); }
+            console.log(`${p.name}@${p.version}: ${files.length} files, ${(p.unpackedSize / 1024).toFixed(0)} kB unpacked`);
+          '
 
   # Single stable check name for branch protection, whatever the matrix becomes.
   ci-ok:
