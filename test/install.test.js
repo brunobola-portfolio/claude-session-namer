@@ -681,6 +681,16 @@ test('--dry-run and status only run `--version` and `claude plugin list --json`'
   assert.deepEqual(fs.readdirSync(sb.home), []);
 });
 
+test('--version and -v print the version and exit 0', async () => {
+  for (const flag of ['--version', '-v']) {
+    const r = await cli(sandbox(), [flag], { version: '9.8.7' });
+    assert.equal(r.code, 0, flag);
+    assert.equal(r.out, '9.8.7\n', flag);
+  }
+  const help = await cli(sandbox(), ['--help']);
+  assert.match(help.out, /--version, -v {2}print the version/);
+});
+
 test('help: no arguments prints it with exit 0, npx form, version pin and the docs URL', async () => {
   const sb = sandbox();
   const r = await cli(sb, []);

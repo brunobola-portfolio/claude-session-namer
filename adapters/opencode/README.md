@@ -49,8 +49,8 @@ Safety rules:
 Recommended, one line (`kilo` for Kilo CLI):
 
 ```bash
-npx -y session-namer@1.4.0 install opencode
-npx -y session-namer@1.4.0 install kilo
+npx -y session-namer@1.4.1 install opencode
+npx -y session-namer@1.4.1 install kilo
 ```
 
 The installer copies the runtime to `~/.session-namer/app/<version>` and adds
@@ -97,8 +97,8 @@ message. The session list (`opencode session list`, the TUI picker or
 ## Uninstall
 
 ```bash
-npx -y session-namer@1.4.0 uninstall opencode
-npx -y session-namer@1.4.0 uninstall kilo
+npx -y session-namer@1.4.1 uninstall opencode
+npx -y session-namer@1.4.1 uninstall kilo
 ```
 
 Or by hand: remove the `file:///.../adapters/opencode/index.mjs` entry from the

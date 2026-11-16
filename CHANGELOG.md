@@ -7,6 +7,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-11-16
+
+### Fixed
+
+- **`session-namer -v` prints the version.** It answered "Unknown command";
+  it now works like `--version`, and `--help` lists both.
+
 ## [1.4.0] - 2026-11-16
 
 _Install from npm with provenance, and release notes that get to the point._
