@@ -76,6 +76,13 @@ function changelogSection(version) {
   };
 }
 
+const REPO_URL = 'https://github.com/brunobola-portfolio/claude-session-namer';
+
+/** Release notes live outside the repository, so relative links point at the tag. */
+function absoluteLinks(markdown, tag) {
+  return markdown.replace(/\]\((?![a-z][a-z0-9+.-]*:|#|\/)([^)\s]+)\)/gi, (_, rel) => `](${REPO_URL}/blob/${tag}/${rel.replace(/^\.\//, '')})`);
+}
+
 /* Changelog style (docs/changelog-style.md), enforced on every entry. */
 const SECTIONS = ['Added', 'Changed', 'Deprecated', 'Removed', 'Fixed', 'Security'];
 const SUMMARY_RE = /^_([^_].*[^_]|[^_])_$/;
@@ -222,7 +229,7 @@ function main(argv) {
     const version = JSON.parse(read('package.json')).version;
     const section = changelogSection(version);
     if (!section) { process.stderr.write(`No changelog entry for ${version}\n`); return 1; }
-    process.stdout.write(`${section.notes}\n`);
+    process.stdout.write(`${absoluteLinks(section.notes, `v${version}`)}\n`);
     return 0;
   }
   if (arg === '--title') {
@@ -257,4 +264,4 @@ Next steps:
 
 if (require.main === module) process.exitCode = main(process.argv.slice(2));
 
-module.exports = { check, bump, changelogSection, lintChangelog, pinnedDocs, cmpSemver, PIN_RE, LIMITS };
+module.exports = { check, bump, changelogSection, lintChangelog, absoluteLinks, pinnedDocs, cmpSemver, PIN_RE, LIMITS };
