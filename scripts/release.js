@@ -5,7 +5,10 @@
  *
  *   node scripts/release.js 1.3.0     bump every version and install pin, date the changelog
  *   node scripts/release.js --check   verify they all agree (run by the tests and the release workflow)
- *   node scripts/release.js --notes   print the changelog section of the current version
+ *   node scripts/release.js --notes   print the changelog section of the current version (without its summary)
+ *   node scripts/release.js --title   print the release title: "vX.Y.Z · <summary line>"
+ *
+ * --check also lints the changelog against docs/changelog-style.md.
  *
  * The version lives in package.json, .claude-plugin/plugin.json and
  * .claude-plugin/marketplace.json; the docs pin it as `claude-session-namer#vX.Y.Z`.
@@ -60,7 +63,97 @@ function changelogSection(version) {
   if (!m) return null;
   const rest = text.slice(m.index + m[0].length);
   const next = rest.search(/^## \[/m);
-  return { date: m[1], body: (next === -1 ? rest : rest.slice(0, next)).trim() };
+  const body = (next === -1 ? rest : rest.slice(0, next)).trim();
+  const sm = SUMMARY_RE.exec(body.split('\n')[0] || '');
+  return {
+    date: m[1],
+    body,
+    summary: sm ? sm[1].trim() : '',
+    notes: sm ? body.split('\n').slice(1).join('\n').trim() : body,
+  };
+}
+
+/*
+ * Changelog style (docs/changelog-style.md). Enforced on `## [Unreleased]` and
+ * on every release newer than STYLE_SINCE; older entries are left as written.
+ */
+const STYLE_SINCE = '1.3.1';
+const SECTIONS = ['Added', 'Changed', 'Deprecated', 'Removed', 'Fixed', 'Security'];
+const SUMMARY_RE = /^_([^_].*[^_]|[^_])_$/;
+const LIMITS = { summary: 120, lead: 90, bullet: 300, perSection: 6, perRelease: 12 };
+
+/** @returns {string[]} style problems in CHANGELOG text; empty when it follows the guide. */
+function lintChangelog(text) {
+  const problems = [];
+  const blocks = text.replace(/\r\n/g, '\n').split(/^(?=## )/m).filter((b) => b.startsWith('## '));
+  for (const block of blocks) {
+    const [heading, ...lines] = block.split('\n');
+    const hm = /^## \[(Unreleased|\d+\.\d+\.\d+)\](?: - \d{4}-\d{2}-\d{2})?$/.exec(heading.trim());
+    if (!hm) { problems.push(`"${heading.trim()}" is not "## [X.Y.Z] - YYYY-MM-DD" or "## [Unreleased]"`); continue; }
+    const name = hm[1];
+    if (name !== 'Unreleased' && cmpSemver(name, STYLE_SINCE) <= 0) continue;
+    if (name !== 'Unreleased' && !/ - \d{4}-\d{2}-\d{2}$/.test(heading.trim())) problems.push(`[${name}] has no date`);
+
+    const where = (s, i) => `[${name}]${s ? ` ${s}` : ''}${i ? `, bullet ${i}` : ''}`;
+    const sections = [];
+    let section = null;
+    let bullet = null;
+    let sawSummary = false;
+    const closeBullet = () => {
+      if (!bullet) return;
+      const textOf = bullet.join(' ');
+      const n = section.bullets.push(textOf);
+      const lead = /^\*\*(.+?)\*\*/.exec(textOf);
+      if (!lead) problems.push(`${where(section.name, n)}: start with a **bold lead sentence.**`);
+      else if (lead[1].length > LIMITS.lead) problems.push(`${where(section.name, n)}: bold lead is ${lead[1].length} characters (max ${LIMITS.lead})`);
+      if (textOf.length > LIMITS.bullet) problems.push(`${where(section.name, n)}: ${textOf.length} characters (max ${LIMITS.bullet}); keep the what and the why, drop the how`);
+      bullet = null;
+    };
+
+    for (const raw of lines) {
+      const line = raw.replace(/\s+$/, '');
+      if (!line) { if (bullet) closeBullet(); continue; }
+      const sh = /^### (.+)$/.exec(line);
+      if (sh) {
+        closeBullet();
+        const label = sh[1].trim();
+        if (!SECTIONS.includes(label)) problems.push(`${where()}: "### ${label}" is not one of ${SECTIONS.join(', ')}`);
+        else if (sections.some((s) => s.name === label)) problems.push(`${where()}: "### ${label}" appears twice`);
+        else if (sections.length && SECTIONS.indexOf(label) < SECTIONS.indexOf(sections[sections.length - 1].name)) {
+          problems.push(`${where()}: "### ${label}" is out of order (${SECTIONS.join(', ')})`);
+        }
+        section = { name: label, bullets: [] };
+        sections.push(section);
+        continue;
+      }
+      if (/^#/.test(line)) { problems.push(`${where(section && section.name)}: no headings other than "### Section" ("${line}")`); continue; }
+      if (!section) {
+        const sm = SUMMARY_RE.exec(line);
+        if (sm && !sawSummary) {
+          sawSummary = true;
+          if (sm[1].length > LIMITS.summary) problems.push(`${where()}: summary is ${sm[1].length} characters (max ${LIMITS.summary})`);
+        } else {
+          problems.push(`${where()}: only one _italic summary line_ may come before the first "### Section"`);
+        }
+        continue;
+      }
+      if (/^- /.test(line)) { closeBullet(); bullet = [line.slice(2).trim()]; continue; }
+      if (/^\s+[-*+] |^\s+\d+\. /.test(line)) { problems.push(`${where(section.name, section.bullets.length + 1)}: no nested lists; split it or say it in one sentence`); continue; }
+      if (bullet && /^\s+\S/.test(line)) { bullet.push(line.trim()); continue; }
+      problems.push(`${where(section.name)}: every entry is a "- " bullet ("${line.slice(0, 40)}")`);
+    }
+    closeBullet();
+
+    let total = 0;
+    for (const s of sections) {
+      total += s.bullets.length;
+      if (!s.bullets.length) problems.push(`${where(s.name)}: empty section; remove the heading`);
+      if (s.bullets.length > LIMITS.perSection) problems.push(`${where(s.name)}: ${s.bullets.length} bullets (max ${LIMITS.perSection}); merge the small ones`);
+    }
+    if (total > LIMITS.perRelease) problems.push(`${where()}: ${total} bullets (max ${LIMITS.perRelease}); keep what users will notice`);
+    if (name !== 'Unreleased' && !total) problems.push(`${where()}: a release needs at least one entry`);
+  }
+  return problems;
 }
 
 /** @returns {string[]} problems; empty when everything agrees. */
@@ -77,6 +170,7 @@ function check() {
   const section = changelogSection(version);
   if (!section) problems.push(`CHANGELOG.md has no "## [${version}] - YYYY-MM-DD" entry`);
   else if (!section.body) problems.push(`CHANGELOG.md entry for ${version} is empty`);
+  for (const p of lintChangelog(read('CHANGELOG.md'))) problems.push(`CHANGELOG.md ${p} (see docs/changelog-style.md)`);
   return problems;
 }
 
@@ -130,7 +224,13 @@ function main(argv) {
     const version = JSON.parse(read('package.json')).version;
     const section = changelogSection(version);
     if (!section) { process.stderr.write(`No changelog entry for ${version}\n`); return 1; }
-    process.stdout.write(`${section.body}\n`);
+    process.stdout.write(`${section.notes}\n`);
+    return 0;
+  }
+  if (arg === '--title') {
+    const version = JSON.parse(read('package.json')).version;
+    const section = changelogSection(version);
+    process.stdout.write(`v${version}${section && section.summary ? ` · ${section.summary}` : ''}\n`);
     return 0;
   }
   if (!arg || arg === '-h' || arg === '--help') {
@@ -159,4 +259,4 @@ Next steps:
 
 if (require.main === module) process.exitCode = main(process.argv.slice(2));
 
-module.exports = { check, bump, changelogSection, pinnedDocs, cmpSemver, PIN_RE };
+module.exports = { check, bump, changelogSection, lintChangelog, pinnedDocs, cmpSemver, PIN_RE, STYLE_SINCE, LIMITS };

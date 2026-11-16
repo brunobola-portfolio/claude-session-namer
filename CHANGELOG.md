@@ -2,16 +2,15 @@
 
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
-[Semantic Versioning](https://semver.org/).
+[Semantic Versioning](https://semver.org/). Entries follow the
+[changelog style](docs/changelog-style.md).
 
 ## [Unreleased]
 
 ### Changed
 
-- The npm package is named `session-namer` (the name `claude-session-namer`
-  belongs to someone else on npm) and is no longer private. The Release
-  workflow can publish each tag to npm with provenance through trusted
-  publishing, switched on by the `NPM_PUBLISH` repository variable.
+- **Published on npm as `session-namer`, with provenance.** The name
+  `claude-session-namer` is taken on npm, so the package uses the plugin's name.
 
 ## [1.3.1] - 2026-11-10
 

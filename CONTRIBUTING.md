@@ -52,7 +52,9 @@ testing the hook flow.
   Path handling goes through `path.win32` / `path.posix` explicitly where it
   matters.
 - **Changelog.** Describe user-visible changes under `## [Unreleased]` in
-  `CHANGELOG.md`; the release script dates that section.
+  `CHANGELOG.md`, following the [changelog style](docs/changelog-style.md):
+  a **bold lead sentence** per bullet, at most 300 characters, 6 bullets per
+  section. `npm test` checks it; the release script dates that section.
 
 ## How changes reach `main`
 
@@ -89,6 +91,20 @@ provenance, through npm trusted publishing (no token in the repository). It
 runs once the repository variable `NPM_PUBLISH` is `true` and the npm package
 lists this repository and `release.yml` as its trusted publisher; a version
 that is already on npm is skipped.
+
+npm only lets you add a trusted publisher to a package that already exists, so
+the very first version is published by hand, once:
+
+```bash
+git switch main && git pull && git checkout vX.Y.Z   # the first tag whose package.json says "session-namer"
+npm login && npm publish --access public             # asks for your 2FA code
+```
+
+Then on npmjs.com, package `session-namer` → Settings → Trusted publishing,
+add GitHub Actions with repository `brunobola-portfolio/claude-session-namer`
+and workflow `release.yml`; set publishing access to "Require two-factor
+authentication and disallow tokens"; and set the repository variable with
+`gh variable set NPM_PUBLISH --body true`. Every later tag publishes itself.
 
 ## Commit messages
 
