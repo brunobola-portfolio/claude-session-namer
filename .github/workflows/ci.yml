@@ -22,6 +22,12 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         node: [18, 22, 24]
+        # Every job takes under a minute; macOS runners are the scarce ones and
+        # queued for up to 15 minutes. Node versions are covered on Linux and
+        # Windows, so macOS runs the oldest and newest supported Node only.
+        exclude:
+          - os: macos-latest
+            node: 22
     steps:
       - uses: actions/checkout@v7
         with:

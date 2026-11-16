@@ -7,6 +7,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- **The npm page shows the README artwork in dark mode and on phones.** npm
+  does not rewrite relative `srcset` links, so those images were broken.
+
 ## [1.4.1] - 2026-11-16
 
 ### Fixed
