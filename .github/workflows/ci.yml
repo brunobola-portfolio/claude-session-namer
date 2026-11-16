@@ -58,7 +58,8 @@ jobs:
           node -e '
             const [p] = require("./pack.json");
             const files = p.files.map((f) => f.path);
-            const extra = files.filter((f) => /^(test|docs|scripts|\.github)\//.test(f));
+            // A second README.* at the root can become the registry readme.
+            const extra = files.filter((f) => /^(test|docs|scripts|\.github)\//.test(f) || (/^readme\./i.test(f) && f !== "README.md"));
             const need = ["bin/session-namer.js", "lib/install/index.js", "hooks/namer.js", ".claude-plugin/plugin.json", "README.md", "LICENSE", "CHANGELOG.md"];
             const missing = need.filter((f) => !files.includes(f));
             if (extra.length || missing.length) { console.error({ extra, missing }); process.exit(1); }

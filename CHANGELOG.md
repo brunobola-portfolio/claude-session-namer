@@ -7,6 +7,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- **npm lists the English README.** The registry picked the Portuguese
+  summary; it is now `LEIA-ME.md` and stays out of the package.
+
 ## [1.4.2] - 2026-11-16
 
 ### Fixed

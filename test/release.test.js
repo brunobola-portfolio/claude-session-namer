@@ -81,7 +81,7 @@ function sandbox() {
   put('.claude-plugin/plugin.json', JSON.stringify({ name: 'session-namer', version: '1.2.0' }, null, 2));
   put('.claude-plugin/marketplace.json', JSON.stringify({ metadata: { version: '1.2.0' }, plugins: [{ name: 'session-namer', version: '1.2.0' }] }, null, 2));
   put('README.md', 'npx -y session-namer@1.2.0 install --detect\n/plugin install session-namer@claude-session-namer\n');
-  put('README.pt.md', 'npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 install\n');
+  put('LEIA-ME.md', 'npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 install\n');
   put('docs/install.md', 'pin: claude-session-namer#v1.2.0\n');
   put('adapters/x/README.md', 'nothing pinned here\n');
   put('CHANGELOG.md', '# Changelog\n\n## [Unreleased]\n\n_Small fixes._\n\n### Fixed\n\n- **A thing.**\n\n## [1.2.0] - 2026-11-04\n\n### Added\n\n- **Old.**\n');
@@ -102,7 +102,7 @@ test('release bumps manifests, pins and dates the Unreleased section', () => {
     assert.equal(market.metadata.version, '1.2.1');
     assert.equal(market.plugins[0].version, '1.2.1');
     assert.equal(fs.readFileSync(path.join(dir, 'README.md'), 'utf8'), 'npx -y session-namer@1.2.1 install --detect\n/plugin install session-namer@claude-session-namer\n');
-    assert.match(fs.readFileSync(path.join(dir, 'README.pt.md'), 'utf8'), /claude-session-namer#v1\.2\.1 install/);
+    assert.match(fs.readFileSync(path.join(dir, 'LEIA-ME.md'), 'utf8'), /claude-session-namer#v1\.2\.1 install/);
     assert.match(fs.readFileSync(path.join(dir, 'docs/install.md'), 'utf8'), /#v1\.2\.1/);
     const log = fs.readFileSync(path.join(dir, 'CHANGELOG.md'), 'utf8');
     assert.match(log, /## \[Unreleased\]\n\n## \[1\.2\.1\] - \d{4}-\d{2}-\d{2}\n\n_Small fixes\._\n\n### Fixed\n\n- \*\*A thing\.\*\*/);
