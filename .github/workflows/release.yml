@@ -124,21 +124,26 @@ jobs:
           fi
 
       # Fails the release if the version is not served with its provenance
-      # attestation. --prefer-online skips npm's local metadata cache: the
-      # registry check above cached the package before this version existed.
+      # attestation. It reads the version document, not the package document:
+      # the registry check above made the CDN cache the package document (up
+      # to 5 minutes) from before this version existed.
       - name: Verify the version is on npm with provenance
         id: verify
         # Also on a re-run that finds the version already published (mode skip).
         if: steps.registry.outputs.mode == 'skip' || steps.publish.outputs.published == 'true'
         run: |
-          spec="$(node -p "const p=require('./package.json'); p.name+'@'+p.version")"
-          for i in $(seq 1 18); do
-            if [ "$(npm view --prefer-online "$spec" dist.attestations.provenance.predicateType 2>/dev/null)" = "https://slsa.dev/provenance/v1" ]; then
-              echo "$spec is on npm with SLSA provenance"; exit 0
+          name="$(node -p "require('./package.json').name")"
+          version="$(node -p "require('./package.json').version")"
+          url="https://registry.npmjs.org/$name/$version"
+          for i in $(seq 1 40); do
+            type="$(curl -fsS -H 'Cache-Control: no-cache' "$url?t=$(date +%s)" 2>/dev/null \
+              | node -e 'let s="";process.stdin.on("data",(d)=>s+=d).on("end",()=>{try{console.log(JSON.parse(s).dist.attestations.provenance.predicateType)}catch{}})')"
+            if [ "$type" = "https://slsa.dev/provenance/v1" ]; then
+              echo "$name@$version is on npm with SLSA provenance"; exit 0
             fi
-            sleep 10
+            sleep 15
           done
-          echo "::error::$spec is not on npm with a provenance attestation"; exit 1
+          echo "::error::$name@$version is not on npm with a provenance attestation after 10 minutes"; exit 1
 
   release:
     name: publish GitHub release
