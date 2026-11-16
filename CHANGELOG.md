@@ -7,6 +7,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.4.2] - 2026-11-16
+
 ### Fixed
 
 - **The npm page shows the README artwork in dark mode and on phones.** npm
