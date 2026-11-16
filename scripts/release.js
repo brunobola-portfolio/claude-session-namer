@@ -28,7 +28,7 @@ const write = (rel, text) => fs.writeFileSync(path.join(ROOT, rel), text);
 
 /** Markdown files that may carry an install pin. */
 function pinnedDocs() {
-  const out = ['README.md', 'README.pt.md', 'SECURITY.md', 'CONTRIBUTING.md'].filter((f) => fs.existsSync(path.join(ROOT, f)));
+  const out = ['README.md', 'LEIA-ME.md', 'SECURITY.md', 'CONTRIBUTING.md'].filter((f) => fs.existsSync(path.join(ROOT, f)));
   for (const dir of ['docs', 'adapters']) {
     const walk = (rel) => {
       for (const ent of fs.readdirSync(path.join(ROOT, rel), { withFileTypes: true })) {

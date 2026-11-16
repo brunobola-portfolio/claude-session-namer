@@ -14,7 +14,7 @@
   <img alt="Windows, macOS, Linux" src="https://img.shields.io/badge/os-Windows%20%7C%20macOS%20%7C%20Linux-2346D8">
 </p>
 
-<p align="center"><a href="README.pt.md">Português</a></p>
+<p align="center"><a href="LEIA-ME.md">Português</a></p>
 
 **session-namer** gives every AI coding session a title that says which
 project it belongs to and what it is about: `webapp - Fix Safari login

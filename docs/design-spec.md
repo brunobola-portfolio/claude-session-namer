@@ -246,7 +246,7 @@ claude-session-namer/
   commands/session-name.md          # /session-name [topic] [--remote] [--doctor]
   test/*.test.js                    # node:test, no deps; fixtures of hook inputs
   docs/design-spec.md              # this spec
-  README.md, README.pt.md, CHANGELOG.md, LICENSE (MIT)
+  README.md, LEIA-ME.md, CHANGELOG.md, LICENSE (MIT)
   package.json                      # "test": "node --test", no dependencies
 ```
 
@@ -315,7 +315,7 @@ in README and checked by `--doctor`). Zero npm dependencies.
 - Version in `plugin.json` (semver), CHANGELOG, tags.
 - Install: `/plugin marketplace add brunobola-portfolio/claude-session-namer` then
   `/plugin install session-namer@claude-session-namer`.
-- README (EN) + README.pt.md: what it does, 60-second install, options,
+- README (EN) + LEIA-ME.md: what it does, 60-second install, options,
   Remote Control section, VS Code caveat, privacy, troubleshooting,
   uninstall.
 
