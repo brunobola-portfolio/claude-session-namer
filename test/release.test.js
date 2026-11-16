@@ -20,6 +20,15 @@ test('release notes point relative links at the tag and leave the rest alone', (
   assert.equal(absoluteLinks(keep, 'v1.4.0'), keep);
 });
 
+test('README artwork uses absolute URLs, so it also renders on npmjs.com', () => {
+  // npm rewrites a relative <img src> but not <source srcset>, so dark-mode and
+  // phone variants broke on the package page.
+  const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
+  const refs = [...readme.matchAll(/\b(?:src|srcset)="([^"]+)"/g)].map((m) => m[1]);
+  assert.ok(refs.length > 0);
+  assert.deepEqual(refs.filter((u) => !/^https:\/\//.test(u)), []);
+});
+
 const lint = (body, heading = '## [Unreleased]') => lintChangelog(`# Changelog\n\n${heading}\n\n${body}\n\n## [1.0.0] - 2026-01-01\n\n### Added\n\n- **First release.**\n`);
 
 test('changelog lint accepts the documented shape', () => {

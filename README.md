@@ -1,8 +1,8 @@
 <picture>
-  <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="docs/assets/hero-narrow-dark.svg">
-  <source media="(max-width: 600px)" srcset="docs/assets/hero-narrow-light.svg">
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/hero-dark.svg">
-  <img alt="session-namer: project-first titles for every AI coding session, shown as three label-maker tapes reading 'webapp - Fix Safari login redirect loop', 'arcva-2.0 - Migração de faturas para V10' and 'crm - Paginación en listado de clientes'" src="docs/assets/hero-light.svg" width="100%">
+  <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/brunobola-portfolio/claude-session-namer/main/docs/assets/hero-narrow-dark.svg">
+  <source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/brunobola-portfolio/claude-session-namer/main/docs/assets/hero-narrow-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/brunobola-portfolio/claude-session-namer/main/docs/assets/hero-dark.svg">
+  <img alt="session-namer: project-first titles for every AI coding session, shown as three label-maker tapes reading 'webapp - Fix Safari login redirect loop', 'arcva-2.0 - Migração de faturas para V10' and 'crm - Paginación en listado de clientes'" src="https://raw.githubusercontent.com/brunobola-portfolio/claude-session-namer/main/docs/assets/hero-light.svg" width="100%">
 </picture>
 
 <p align="center">
@@ -81,10 +81,10 @@ you. Every other agent titles sessions its own way, if at all, so the same
 work looks different in every tool.
 
 <picture>
-  <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="docs/assets/before-after-narrow-dark.svg">
-  <source media="(max-width: 600px)" srcset="docs/assets/before-after-narrow-light.svg">
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/before-after-dark.svg">
-  <img alt="Two session lists side by side. Native titles: 'Fix failing tests' twice, a truncated Portuguese prompt, 'graceful-tumbling-unicorn' and 'Implement the changes we discussed'. With session-namer each row starts with a yellow project chip: api, webapp, arcva-2.0, crm, infra, followed by a short topic." src="docs/assets/before-after-light.svg" width="100%">
+  <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/brunobola-portfolio/claude-session-namer/main/docs/assets/before-after-narrow-dark.svg">
+  <source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/brunobola-portfolio/claude-session-namer/main/docs/assets/before-after-narrow-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/brunobola-portfolio/claude-session-namer/main/docs/assets/before-after-dark.svg">
+  <img alt="Two session lists side by side. Native titles: 'Fix failing tests' twice, a truncated Portuguese prompt, 'graceful-tumbling-unicorn' and 'Implement the changes we discussed'. With session-namer each row starts with a yellow project chip: api, webapp, arcva-2.0, crm, infra, followed by a short topic." src="https://raw.githubusercontent.com/brunobola-portfolio/claude-session-namer/main/docs/assets/before-after-light.svg" width="100%">
 </picture>
 
 With session-namer the project comes first, the topic is specific, and the
@@ -108,10 +108,10 @@ opening any of them.
 ## How it works
 
 <picture>
-  <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="docs/assets/flow-narrow-dark.svg">
-  <source media="(max-width: 600px)" srcset="docs/assets/flow-narrow-light.svg">
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/flow-dark.svg">
-  <img alt="Three steps. 1, session starts: title becomes the git repo name. 2, first real prompt: a fast model writes a 3 to 7 word topic in your language. 3, next two prompts: the title is set again. Below, three guarantees: trivial prompts cost nothing, your title wins, and failures keep the project title." src="docs/assets/flow-light.svg" width="100%">
+  <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/brunobola-portfolio/claude-session-namer/main/docs/assets/flow-narrow-dark.svg">
+  <source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/brunobola-portfolio/claude-session-namer/main/docs/assets/flow-narrow-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/brunobola-portfolio/claude-session-namer/main/docs/assets/flow-dark.svg">
+  <img alt="Three steps. 1, session starts: title becomes the git repo name. 2, first real prompt: a fast model writes a 3 to 7 word topic in your language. 3, next two prompts: the title is set again. Below, three guarantees: trivial prompts cost nothing, your title wins, and failures keep the project title." src="https://raw.githubusercontent.com/brunobola-portfolio/claude-session-namer/main/docs/assets/flow-light.svg" width="100%">
 </picture>
 
 The title is set through each agent's own supported mechanism (in Claude
@@ -131,10 +131,10 @@ later prompt cost under 100 ms. The design, state machine and trade-offs are in
 ## Works with
 
 <picture>
-  <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="docs/assets/harnesses-narrow-dark.svg">
-  <source media="(max-width: 600px)" srcset="docs/assets/harnesses-narrow-light.svg">
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/harnesses-dark.svg">
-  <img alt="Session title set automatically and verified live: Claude Code, Codex CLI, Pi, OpenCode, Kilo CLI, Copilot CLI, Cline CLI, Crush, goose, DeepSeek Harness, Grok Build. Session title, partly verified: Amp. Terminal tab title only: Gemini CLI, Qwen Code." src="docs/assets/harnesses-light.svg" width="100%">
+  <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/brunobola-portfolio/claude-session-namer/main/docs/assets/harnesses-narrow-dark.svg">
+  <source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/brunobola-portfolio/claude-session-namer/main/docs/assets/harnesses-narrow-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/brunobola-portfolio/claude-session-namer/main/docs/assets/harnesses-dark.svg">
+  <img alt="Session title set automatically and verified live: Claude Code, Codex CLI, Pi, OpenCode, Kilo CLI, Copilot CLI, Cline CLI, Crush, goose, DeepSeek Harness, Grok Build. Session title, partly verified: Amp. Terminal tab title only: Gemini CLI, Qwen Code." src="https://raw.githubusercontent.com/brunobola-portfolio/claude-session-namer/main/docs/assets/harnesses-light.svg" width="100%">
 </picture>
 
 Claude Code is **stable**. The other adapters are **beta**: each was
