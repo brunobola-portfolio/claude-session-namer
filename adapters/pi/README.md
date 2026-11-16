@@ -49,7 +49,7 @@ does not copy it anywhere.
 Recommended, one line:
 
 ```bash
-npx -y session-namer@1.4.0 install pi
+npx -y session-namer@1.4.1 install pi
 ```
 
 The installer copies the runtime to `~/.session-namer/app/<version>` and runs
@@ -77,7 +77,7 @@ the project name. Send a real message: a few seconds later the name becomes
 ## Uninstall
 
 ```bash
-npx -y session-namer@1.4.0 uninstall pi
+npx -y session-namer@1.4.1 uninstall pi
 ```
 
 Or by hand: `pi remove ./claude-session-namer/adapters/pi` (the same path you
