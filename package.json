@@ -1,6 +1,6 @@
 {
   "name": "session-namer",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Project-first \"project - topic\" titles for AI coding sessions: a Claude Code plugin plus adapters and a one-command installer for 13 other agents.",
   "license": "MIT",
   "author": "BolaLabs (https://github.com/brunobola-portfolio)",

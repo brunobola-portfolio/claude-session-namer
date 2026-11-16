@@ -59,7 +59,7 @@ interactive.
 Recommended, one line:
 
 ```bash
-npx -y session-namer@1.4.1 install gemini
+npx -y session-namer@1.4.2 install gemini
 ```
 
 The installer copies the runtime to `~/.session-namer/app/<version>`, adds the
@@ -96,7 +96,7 @@ rest of the run.
 ## Uninstall
 
 ```bash
-npx -y session-namer@1.4.1 uninstall gemini
+npx -y session-namer@1.4.2 uninstall gemini
 ```
 
 Or by hand: remove the three hook entries and, if you like,

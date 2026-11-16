@@ -8,7 +8,7 @@ version listed. CI runs the full test suite on Windows, macOS and Linux. Where
 something was not proven, the table says so.
 
 > **Install any of them with one command:**
-> `npx -y session-namer@1.4.1 install <id>`
+> `npx -y session-namer@1.4.2 install <id>`
 > (or `install --detect` for every agent on your `PATH`). See
 > [install.md](install.md).
 
