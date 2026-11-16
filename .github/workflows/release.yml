@@ -20,6 +20,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@v7
         with:
@@ -55,10 +57,11 @@ jobs:
           **Install.** In Claude Code: \`/plugin marketplace add brunobola-portfolio/claude-session-namer\` then \`/plugin install session-namer@claude-session-namer\` (update with \`/plugin marketplace update claude-session-namer\`).
           Any other agent: \`npx -y github:brunobola-portfolio/claude-session-namer#$GITHUB_REF_NAME install --detect\`.
           EOF
+          title="$(node scripts/release.js --title)"
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release edit "$GITHUB_REF_NAME" --notes-file notes.md
+            gh release edit "$GITHUB_REF_NAME" --title "$title" --notes-file notes.md
           else
-            gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag --latest
+            gh release create "$GITHUB_REF_NAME" --title "$title" --notes-file notes.md --verify-tag --latest
           fi
 
   # Publishes the same tag to npm as `session-namer`, with provenance, through
@@ -76,6 +79,8 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@v7
         with:
@@ -86,9 +91,13 @@ jobs:
         run: |
           name="$(node -p "require('./package.json').name")"
           version="$(node -p "require('./package.json').version")"
+          if ! npm view "$name" name >/dev/null 2>&1; then
+            echo "::error::$name is not on npm yet. Trusted publishing can only be set up for an existing package: publish the first version by hand (see CONTRIBUTING.md, Releasing), add this workflow as its trusted publisher, then re-run this job."
+            exit 1
+          fi
           if npm view "$name@$version" version >/dev/null 2>&1; then
             echo "$name@$version is already on npm"
           else
-            npm install -g npm@11
+            npm install -g "npm@^11.5.1"   # trusted publishing (OIDC) needs npm 11.5.1+
             npm publish --provenance --access public
           fi
