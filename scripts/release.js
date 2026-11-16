@@ -60,7 +60,8 @@ function manifestVersions(rel) {
 
 function changelogSection(version) {
   const text = read('CHANGELOG.md').replace(/\r\n/g, '\n');
-  const head = new RegExp(`^## \\[${version.replace(/\./g, '\\.')}\\] - (\\d{4}-\\d{2}-\\d{2})$`, 'm');
+  const escaped = version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const head = new RegExp(`^## \\[${escaped}\\] - (\\d{4}-\\d{2}-\\d{2})$`, 'm');
   const m = head.exec(text);
   if (!m) return null;
   const rest = text.slice(m.index + m[0].length);

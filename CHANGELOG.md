@@ -31,6 +31,9 @@ _Install from npm with provenance, and release notes that get to the point._
 ### Security
 
 - **CodeQL scans every pull request and the main branch each week.**
+- **State files, Cline hooks and terminal titles are written without file
+  races.** Files are created owner-only and exclusively, and a terminal is
+  checked on its open descriptor, so a path swapped mid-write is never used.
 
 ## [1.3.1] - 2026-11-10
 
