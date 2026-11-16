@@ -7,6 +7,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.4.3] - 2026-11-16
+
 ### Fixed
 
 - **npm lists the English README.** The registry picked the Portuguese
