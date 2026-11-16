@@ -7,7 +7,7 @@ it for them: short, concrete and about what they will notice.
 The format is [Keep a Changelog 1.1](https://keepachangelog.com/en/1.1.0/)
 with [Semantic Versioning](https://semver.org/). `npm run release:check` (run
 by `npm test`, so by CI on every pull request) enforces the rules marked
-**[checked]** on `## [Unreleased]` and on every release after 1.3.1.
+**[checked]** on every entry, from `## [Unreleased]` down to 1.0.0.
 
 ## Shape of a release
 
@@ -60,13 +60,15 @@ _Titles in Zed and Warp, and a faster first title everywhere._
   renamed.**", then one sentence on what now happens.
 - Numbers beat adjectives: "67 files instead of the whole repository", not
   "much smaller".
-- Breaking changes start the lead with `**Breaking:**` and say what to do.
+- Breaking changes start the bold lead with "Breaking:" and say what to do:
+  `- **Breaking: \`--bare\` is gone.** API-key users need nothing; it is automatic.`
 - Leave out refactors, test-only changes, CI tweaks and dependency bumps unless
   a user would notice them.
 
 ## Before and after
 
-Too long (412 characters, explains the how):
+No lead, and it explains the how (the workflow, the variable) instead of what
+the user gets:
 
 ```markdown
 - The npm package is named `session-namer` (the name `claude-session-namer`

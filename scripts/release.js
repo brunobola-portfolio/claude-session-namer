@@ -73,11 +73,7 @@ function changelogSection(version) {
   };
 }
 
-/*
- * Changelog style (docs/changelog-style.md). Enforced on `## [Unreleased]` and
- * on every release newer than STYLE_SINCE; older entries are left as written.
- */
-const STYLE_SINCE = '1.3.1';
+/* Changelog style (docs/changelog-style.md), enforced on every entry. */
 const SECTIONS = ['Added', 'Changed', 'Deprecated', 'Removed', 'Fixed', 'Security'];
 const SUMMARY_RE = /^_([^_].*[^_]|[^_])_$/;
 const LIMITS = { summary: 120, lead: 90, bullet: 300, perSection: 6, perRelease: 12 };
@@ -91,7 +87,6 @@ function lintChangelog(text) {
     const hm = /^## \[(Unreleased|\d+\.\d+\.\d+)\](?: - \d{4}-\d{2}-\d{2})?$/.exec(heading.trim());
     if (!hm) { problems.push(`"${heading.trim()}" is not "## [X.Y.Z] - YYYY-MM-DD" or "## [Unreleased]"`); continue; }
     const name = hm[1];
-    if (name !== 'Unreleased' && cmpSemver(name, STYLE_SINCE) <= 0) continue;
     if (name !== 'Unreleased' && !/ - \d{4}-\d{2}-\d{2}$/.test(heading.trim())) problems.push(`[${name}] has no date`);
 
     const where = (s, i) => `[${name}]${s ? ` ${s}` : ''}${i ? `, bullet ${i}` : ''}`;
@@ -259,4 +254,4 @@ Next steps:
 
 if (require.main === module) process.exitCode = main(process.argv.slice(2));
 
-module.exports = { check, bump, changelogSection, lintChangelog, pinnedDocs, cmpSemver, PIN_RE, STYLE_SINCE, LIMITS };
+module.exports = { check, bump, changelogSection, lintChangelog, pinnedDocs, cmpSemver, PIN_RE, LIMITS };

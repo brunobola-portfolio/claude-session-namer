@@ -10,12 +10,19 @@ const root = path.join(__dirname, '..');
 const script = path.join(root, 'scripts', 'release.js');
 const { check, cmpSemver, lintChangelog } = require('../scripts/release');
 
-const lint = (body, heading = '## [Unreleased]') => lintChangelog(`# Changelog\n\n${heading}\n\n${body}\n\n## [1.0.0] - 2026-01-01\n\nanything goes in old entries\n`);
+const lint = (body, heading = '## [Unreleased]') => lintChangelog(`# Changelog\n\n${heading}\n\n${body}\n\n## [1.0.0] - 2026-01-01\n\n### Added\n\n- **First release.**\n`);
 
 test('changelog lint accepts the documented shape', () => {
   assert.deepEqual(lint('_Faster titles._\n\n### Added\n\n- **Zed gets titles.** Set up by\n  `install --detect`.\n\n### Fixed\n\n- **Slow `git` no longer delays the title.**'), []);
   assert.deepEqual(lint(''), [], 'an empty Unreleased section is fine');
-  assert.deepEqual(lint('### Fixed\n\n- **A thing.**', '## [1.3.1] - 2026-11-10'), [], 'releases up to STYLE_SINCE are not linted');
+  assert.deepEqual(lint('### Fixed\n\n- **A thing.**', '## [1.3.1] - 2026-11-10'), []);
+});
+
+test('changelog lint checks every release, not only Unreleased', () => {
+  const p = lint('', '## [Unreleased]\n\n## [1.1.0] - 2026-02-01\n\n### Fixed\n\n- An old entry without a lead.');
+  assert.equal(p.length, 1, p.join('\n'));
+  assert.match(p[0], /\[1\.1\.0\] Fixed, bullet 1: start with a \*\*bold lead/);
+  assert.match(lint('', '## [1.1.0]').join('\n'), /\[1\.1\.0\] has no date/);
 });
 
 test('changelog lint rejects long, unbolded, nested, unordered or oversized entries', () => {
@@ -58,7 +65,7 @@ function sandbox() {
   put('README.pt.md', 'npx -y github:brunobola-portfolio/claude-session-namer#v1.2.0 install\n');
   put('docs/install.md', 'pin: claude-session-namer#v1.2.0\n');
   put('adapters/x/README.md', 'nothing pinned here\n');
-  put('CHANGELOG.md', '# Changelog\n\n## [Unreleased]\n\n_Small fixes._\n\n### Fixed\n\n- **A thing.**\n\n## [1.2.0] - 2026-11-04\n\n- Old.\n');
+  put('CHANGELOG.md', '# Changelog\n\n## [Unreleased]\n\n_Small fixes._\n\n### Fixed\n\n- **A thing.**\n\n## [1.2.0] - 2026-11-04\n\n### Added\n\n- **Old.**\n');
   return dir;
 }
 

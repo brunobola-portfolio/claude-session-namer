@@ -16,181 +16,150 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
-- **`/session-name` showed `&lt;project&gt; - &lt;topic&gt;` in the Claude
-  Code command menu.** Claude Code HTML-escapes command and plugin
-  descriptions, so the angle brackets came out as entities. The command,
-  plugin, marketplace, Copilot, Pi and goose descriptions now read
-  "project - topic", and a test keeps `<`, `>` and `&` out of them.
+- **`/session-name` no longer shows `&lt;project&gt;` in the command menu.**
+  Claude Code escapes angle brackets in descriptions, so every description now
+  reads "project - topic", and a test keeps `<`, `>` and `&` out of them.
 
 ## [1.3.0] - 2026-11-04
 
+_Live Codex titles, a working Grok Build adapter and clearer diagnostics._
+
 ### Added
 
-- **Codex CLI: live titles in the TUI.** With the Codex daemon running
-  (`codex app-server daemon start`), the adapter talks to it over its
-  WebSocket control socket and claims the thread as `<project>` right away,
-  so every attached TUI redraws the moment the topic lands. Without the
-  daemon, Codex titles new threads itself and session-namer leaves them alone;
-  the installer and docs now say so.
-- **Tab title on macOS and Linux for hooks started without a terminal**
-  (Qwen Code starts hooks detached): the hook finds the terminal of its
-  nearest parent process and the background worker inherits it. Proven in CI
-  on real ptys on Ubuntu and macOS.
-- **Better headless detection for Gemini CLI and Qwen Code:** a prompt given
-  as a plain command-line argument (`gemini "fix the bug"`) and `CI=true` now
-  count as headless runs.
-- One-command releases: `npm run release -- X.Y.Z` bumps every manifest and
-  install pin and dates the changelog; pushing the tag runs the new Release
-  workflow, which verifies the tag and publishes the GitHub release. Release
-  tags can only be created by the maintainer.
-- `/session-name --doctor` warns when Claude Code is older than 2.1.152 and
-  says why a dry-run generation failed (for example "Not logged in").
-
-### Fixed
-
-- **Grok Build:** a new session was never renamed, because Grok titles it at
-  once and omits `title_is_manual`. The hook now reads Grok's real payload
-  (`prompt`) and renames auto-titled sessions. Verified in the Grok TUI;
-  Grok moves from "partly verified" to beta.
-- The Claude Code plugin no longer spends a model call when Grok runs it
-  (Grok loads Claude Code plugins too).
-- **DeepSeek Harness:** a cancelled title call no longer keeps `claude -p`
-  (and `dsh headless`) running for a discarded title.
-- **Amp:** colour codes in `amp threads rename` errors no longer hide a
-  failed rename.
-- Topics cut by `max_words` no longer end on a dangling word
-  ("…expresión regular en" becomes "…expresión regular").
-- Installer: dry runs read "would create …" and end with "Dry run complete;
-  nothing was written."; `status` suggests the pinned `npx` command instead of
-  a `session-namer` binary that is not on `PATH`; a mistyped command gets a
-  suggestion; a failed `claude plugin install` shows git's real error.
+- **Codex CLI titles appear live in the TUI.** With `codex app-server daemon
+  start` running, the adapter claims the thread as `<project>` at once and
+  every attached TUI redraws when the topic lands.
+- **Tab titles on macOS and Linux for hooks started without a terminal.** Qwen
+  Code starts hooks detached; the hook now finds its parent's terminal. Proven
+  in CI on real ptys.
+- **Gemini CLI and Qwen Code detect headless runs better.** A prompt passed as
+  an argument (`gemini "fix the bug"`) and `CI=true` now count as headless.
+- **`/session-name --doctor` explains more.** It warns when Claude Code is
+  older than 2.1.152 and says why a dry-run generation failed.
 
 ### Changed
 
-- The `npx` install fetches only the runtime (67 files instead of the whole
-  repository with tests and artwork), and npm no longer warns about a missing
-  `.npmignore`.
-- Every `npx` command in the docs is pinned to the release.
-- Docs say plainly what was verified where: live on Windows 11, with the full
-  test suite on Windows, macOS and Linux in CI, and which agents were checked
-  against a local stand-in model because no login was available.
-- Phone-width artwork shows the three support levels separately and uses
-  larger topic text.
+- **`npx` installs fetch only the runtime.** 67 files instead of the whole
+  repository, and npm no longer warns about a missing `.npmignore`.
+- **Docs pin every `npx` command to the release and say what was verified
+  where.** Live on Windows 11; the full test suite on Windows, macOS and Linux.
+
+### Fixed
+
+- **Grok Build sessions are renamed.** Grok titles new sessions itself and
+  omits `title_is_manual`; the hook now reads Grok's real payload. Verified in
+  the Grok TUI, so Grok moves to beta.
+- **Grok no longer spends a model call on the Claude Code plugin.** Grok loads
+  Claude Code plugins too; the plugin now steps aside.
+- **A cancelled DeepSeek Harness title call stops.** `claude -p` and `dsh
+  headless` no longer keep running for a discarded title.
+- **Failed Amp renames are reported.** Colour codes in `amp threads rename`
+  errors no longer hide them.
+- **Topics cut by `max_words` no longer end on a dangling word.** "…expresión
+  regular en" becomes "…expresión regular".
+- **Installer messages are clearer.** Dry runs say "would create …", `status`
+  suggests the pinned `npx` command, typos get a suggestion and a failed
+  `claude plugin install` shows git's real error.
 
 ## [1.2.0] - 2026-11-04
 
+_Thirteen more agents and a one-command installer._
+
 ### Added
 
-- **Thirteen more agents.** Beta adapters for OpenAI Codex CLI, Pi, OpenCode,
-  Kilo CLI, GitHub Copilot CLI, Cline CLI, Crush, goose and DeepSeek Harness
-  (automatic session titles, verified live), Amp and Grok Build (partly
-  verified), and Gemini CLI and Qwen Code (terminal tab title, as neither has
-  a title API). See [docs/harnesses.md](docs/harnesses.md).
-- **One-command installer:** `npx -y github:brunobola-portfolio/claude-session-namer
-  install --detect | <agent...>`, plus `uninstall`, `status` and `list`.
-  Config files are backed up, merged without removing anything, and restored
-  exactly on uninstall. It handles CRLF files, symlinks, read-only files,
-  non-ASCII home folders and a corrupt install record, and accepts common
-  aliases (`dsh`, `claude-code`, `gemini-cli`, …).
-- New docs: architecture (with diagrams), agent support matrix, install guide,
-  contributing and security policy. New README artwork, generated by
-  `scripts/build-assets.js` in light and dark variants.
+- **Thirteen more agents.** Beta adapters for Codex CLI, Pi, OpenCode, Kilo
+  CLI, Copilot CLI, Cline CLI, Crush, goose, DeepSeek Harness, Amp, Grok Build,
+  Gemini CLI and Qwen Code. See [docs/harnesses.md](docs/harnesses.md).
+- **One-command installer.** `install --detect` sets up every agent on `PATH`,
+  with `uninstall`, `status` and `list`. Config files are backed up, merged and
+  restored exactly on uninstall.
+- **Docs for architecture, agent support, install, contributing and
+  security.** The README artwork comes in light and dark variants.
+
+### Changed
+
+- **Claude Code shows "Naming this session" while the first-prompt hook
+  runs.**
+- **Minimum Claude Code version is 2.1.152.** It is the first to accept a
+  title on SessionStart.
+- **The generation timeout is capped at 22 s.** It always fits inside the
+  hook's 28 s budget.
 
 ### Fixed
 
-- A `/rename` made after the automatic title could be overwritten by the
-  re-assertion on the next prompts. The hook now reads `session_title` and
-  steps aside for good when the user renamed the session.
-- Prompts that contained instructions ("reply only with OK") could steer the
-  topic model. The prompt is now wrapped in delimiters, look-alikes are
-  defused, and the system prompt treats it strictly as data.
-- When Codex runs this Claude Code plugin's hooks (it can install Claude
-  plugins), the hook now exits immediately instead of spending a model call
-  on a title Codex ignores.
-- Topics in Chinese, Japanese, Thai and other unspaced scripts were rejected
-  as "one word". They are now accepted by length.
-- `max_words` had no effect; it now caps the topic length.
-- Model prefixes such as `Title: "…"` lost only the prefix, not the quotes;
-  hyphenated first words (`Topic-based routing`) were cut.
-- Project names from git submodules and bare repositories were wrong, and a
-  folder or override name could carry escape sequences into the title. Project
-  names, topics and the separator are now stripped of control, bidi and
-  zero-width characters.
-- Resuming a session whose state had been pruned could reset a final title.
-- The temp-folder fallback for state is now per-user and owner-only.
-- Adapter hardening: titles reach Amp, goose and Cline as plain arguments,
-  never through `cmd.exe` or PowerShell parsing; Codex now writes topics with
-  `claude -p` by default (`codex exec` is opt-in, read-only, tools off).
-
-### Changed
-
-- Claude Code shows "Naming this session" while the first-prompt hook runs.
-- CI runs Node 18, 22 and 24 on Ubuntu, macOS and Windows, with a single
-  `ci-ok` check, least-privilege permissions and current action versions.
-- Minimum Claude Code version is now 2.1.152 (title on SessionStart).
-- The generation timeout is capped at 22 s so it always fits inside the
-  hook's 28 s budget.
-- Copyright and authorship: BolaLabs.
+- **A `/rename` made after the automatic title is never overwritten.** The
+  hook reads `session_title` and steps aside for good.
+- **Prompts can no longer steer the topic model.** The prompt is wrapped in
+  delimiters and treated strictly as data, so instructions inside it are
+  ignored.
+- **Topics in Chinese, Japanese, Thai and other unspaced scripts are
+  accepted.** They were rejected as "one word" and are now judged by length.
+- **`max_words` works, and model prefixes come off cleanly.** `Title: "…"`
+  loses its quotes too, and `Topic-based routing` is no longer cut.
+- **Project names are right for submodules and bare repositories.** Names,
+  topics and the separator are stripped of control, bidi and zero-width
+  characters.
+- **Safer state and adapters.** A resumed session keeps its final title, the
+  temp fallback is per-user and owner-only, and titles reach Amp, goose and
+  Cline as plain arguments, never through a shell.
 
 ## [1.1.0] - 2026-11-03
 
+_Titles that win the VS Code race, and no model calls for headless runs._
+
 ### Changed
 
-- The `Stop` hook is gone. The final title is now re-asserted on the next two
-  user prompts instead, which wins the race against the VS Code extension's own
-  auto-title more reliably and removes one hook invocation per turn.
-- `name_headless` is now actually honoured: sessions started with `claude -p`
-  (detected via `CLAUDE_CODE_ENTRYPOINT=sdk-cli`) are skipped entirely unless
-  the option is on, so headless scripts no longer pay a model call.
-- The `claude` executable is now resolved from `CLAUDE_CODE_EXECPATH` (exported
-  by Claude Code to hooks) before searching `PATH`, guaranteeing the same
-  version that runs the session also generates the title.
-  `SESSION_NAMER_CLAUDE_PATH` still outranks everything.
+- **The final title is re-asserted on the next two prompts.** It replaces the
+  `Stop` hook, wins the race against the VS Code auto-title more reliably and
+  saves one hook call per turn.
+- **`name_headless` is honoured.** Sessions started with `claude -p` are
+  skipped unless the option is on, so headless scripts no longer pay a model
+  call.
+- **The title is generated by the same `claude` that runs the session.** It is
+  resolved from `CLAUDE_CODE_EXECPATH` before `PATH`;
+  `SESSION_NAMER_CLAUDE_PATH` still wins.
 
 ## [1.0.3] - 2026-09-10
 
 ### Changed
 
-- Default generation timeout raised to 20 s (max 27 s) after a timeout under load
-  on Windows; the platform hook timeout is 28 s.
-- The log now records why a generation failed (timeout, exit code and stderr,
-  or unusable output) so `--doctor` and the log explain themselves.
+- **The default generation timeout is 20 s (max 27 s).** Raised after a
+  timeout under load on Windows.
+- **The log says why a generation failed.** Timeout, exit code and stderr, or
+  unusable output, so `--doctor` explains itself.
 
 ## [1.0.2] - 2026-09-10
 
 ### Fixed
 
-- Plugin manifest no longer redeclares `hooks/hooks.json` and `commands/`, which
-  Claude Code auto-discovers; the duplicate made hook loading fail with
-  "Duplicate hooks file detected" on install.
+- **Installing the plugin no longer fails with "Duplicate hooks file
+  detected".** The manifest no longer redeclares `hooks/hooks.json` and
+  `commands/`, which Claude Code finds by itself.
 
 ## [1.0.1] - 2026-09-10
 
 ### Changed
 
-- Default generation timeout raised from 12 s to 15 s (max 25 s) after measuring
-  9 to 11 s end-to-end on Windows, where Claude Code startup dominates.
+- **The default generation timeout is 15 s (max 25 s).** End-to-end runs on
+  Windows took 9 to 11 s, mostly Claude Code startup.
 
 ## [1.0.0] - 2026-09-10
 
+_First release: project - topic titles for Claude Code._
+
 ### Added
 
-- SessionStart hook: provisional `<project>` title on startup, resume and fork,
-  never overwriting a user-set title.
-- UserPromptSubmit hook: on the first eligible prompt, a headless `claude -p`
-  call summarises the prompt into a 3 to 7 word topic in the prompt's language
-  and the title becomes `<project> - <topic>`.
-- Stop hook: re-asserts the final title once to survive the VS Code
-  auto-title rewrite.
-- `/session-name` command: manual rename and lock, `--regenerate`, `--remote`
-  tips, `--doctor` diagnostics.
-- Options via plugin `userConfig`, environment overrides and a per-repository
-  `.session-namer.json`.
-- Worktree-aware project resolution, per-account state under
-  `$CLAUDE_CONFIG_DIR/session-namer/`, rotating log, pruning of old state.
-- Lean headless mode (no settings, MCP, tools or skills) that works with OAuth
-  logins and API keys; `--bare` opt-in for API-key users.
-- Windows support: exec-form hooks, native `claude.exe` resolution behind the
-  npm shim, `taskkill` on timeout.
-- 52 unit and contract tests with `node:test`, CI on Linux, macOS and Windows
-  with Node 18, 20 and 22.
+- **A `<project>` title as soon as a session starts.** Set on startup, resume
+  and fork, and never over a title you chose.
+- **`<project> - <topic>` after the first prompt.** A headless `claude -p`
+  call sums up the prompt in 3 to 7 words, in the prompt's language.
+- **The title survives the VS Code auto-title.** A `Stop` hook re-asserts it
+  once.
+- **`/session-name` command.** Rename and lock, `--regenerate`, `--remote`
+  tips and `--doctor` diagnostics.
+- **Options per user, environment and repository.** Plugin `userConfig`,
+  environment overrides and `.session-namer.json`; worktree-aware project
+  names, per-account state and a rotating log.
+- **Works with OAuth logins, API keys and Windows.** A lean headless mode with
+  no settings, MCP, tools or skills; `--bare` for API keys; native
+  `claude.exe` and `taskkill` on Windows.
