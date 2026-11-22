@@ -361,3 +361,83 @@ test('--regenerate clears the legacy reasserted flag so re-assertion works again
   const again = await run('UserPromptSubmit', prompt('Agora corrige os testes que falharam'), deps);
   assert.equal(again.hookSpecificOutput.sessionTitle, 'arcva-2.0 - Migração de faturas para V10');
 });
+
+const LONG = 'Analisa o que falta do projeto por concluir e vê se fica tudo bem';
+const CUT = 'Analisa o que falta do projeto por concluir e vê s...';
+
+test('a placeholder the host cut from the prompt (T3 Code) does not stop naming', async () => {
+  const { dir, deps, generateCalls } = makeDeps();
+  await run('SessionStart', startup(), deps);
+  const out = await run('UserPromptSubmit', prompt(LONG, { session_title: CUT }), deps);
+  assert.equal(out && out.hookSpecificOutput.sessionTitle, 'arcva-2.0 - Migração de faturas para V10');
+  assert.equal(generateCalls.length, 1);
+  assert.equal(readState(dir, 's1').hostTitle, CUT);
+  // The host shows its placeholder again: ours is re-asserted, then left alone.
+  for (let i = 0; i < 2; i++) assert.ok(await run('UserPromptSubmit', prompt('E agora os testes todos', { session_title: CUT }), deps));
+  assert.equal(await run('UserPromptSubmit', prompt('E agora a documentação', { session_title: CUT }), deps), null);
+  const resumed = await run('SessionStart', startup({ source: 'resume', session_title: CUT }), deps);
+  assert.equal(resumed && resumed.hookSpecificOutput.sessionTitle, 'arcva-2.0 - Migração de faturas para V10');
+});
+
+test('a placeholder already present at session start is recognised on the first prompt', async () => {
+  const { deps } = makeDeps();
+  assert.equal(await run('SessionStart', startup({ session_title: CUT }), deps), null);
+  const out = await run('UserPromptSubmit', prompt(LONG, { session_title: CUT }), deps);
+  assert.equal(out && out.hookSpecificOutput.sessionTitle, 'arcva-2.0 - Migração de faturas para V10');
+});
+
+test('a host placeholder seen on a prompt not worth naming waits for the next one', async () => {
+  const { deps, generateCalls } = makeDeps();
+  await run('SessionStart', startup(), deps);
+  assert.equal(await run('UserPromptSubmit', prompt('obrigado', { session_title: 'obrigado' }), deps), null);
+  assert.equal(generateCalls.length, 0);
+  const out = await run('UserPromptSubmit', prompt(LONG, { session_title: 'obrigado' }), deps);
+  assert.equal(out && out.hookSpecificOutput.sessionTitle, 'arcva-2.0 - Migração de faturas para V10');
+});
+
+test('a failed generation keeps the host placeholder and tries again later', async () => {
+  const { dir, deps } = makeDeps({ topic: null });
+  await run('SessionStart', startup(), deps);
+  assert.equal(await run('UserPromptSubmit', prompt(LONG, { session_title: CUT }), deps), null);
+  assert.equal(readState(dir, 's1').stage, 'provisional');
+  deps.generate = async () => 'Migração de faturas para V10';
+  deps.now = () => 1_700_000_100_000;
+  const out = await run('UserPromptSubmit', prompt('Mais uma coisa por favor', { session_title: CUT }), deps);
+  assert.equal(out && out.hookSpecificOutput.sessionTitle, 'arcva-2.0 - Migração de faturas para V10');
+});
+
+test('a name the user chose still wins over placeholder detection', async () => {
+  // --name equal to the prompt.
+  const named = makeDeps();
+  await run('SessionStart', startup({ session_title: 'Fix the login bug' }), named.deps);
+  assert.equal(await run('UserPromptSubmit', prompt('Fix the login bug', { session_title: 'Fix the login bug' }), named.deps), null);
+  assert.equal(named.generateCalls.length, 0);
+
+  // A rename after the placeholder, then a prompt that happens to repeat it.
+  const renamed = makeDeps();
+  await run('SessionStart', startup(), renamed.deps);
+  await run('UserPromptSubmit', prompt(LONG, { session_title: CUT }), renamed.deps);
+  assert.equal(await run('UserPromptSubmit', prompt('Mais uma coisa por favor', { session_title: 'My own name' }), renamed.deps), null);
+  assert.equal(readState(renamed.dir, 's1').stage, 'user');
+  assert.equal(await run('UserPromptSubmit', prompt('My own name', { session_title: 'My own name' }), renamed.deps), null);
+  assert.equal(await run('SessionStart', startup({ source: 'resume', session_title: 'My own name' }), renamed.deps), null);
+
+  // A rename between the first prompt and a later one that repeats it word for word.
+  const repeated = makeDeps();
+  await run('SessionStart', startup(), repeated.deps);
+  assert.equal(await run('UserPromptSubmit', prompt('ok'), repeated.deps), null);
+  const same = { session_title: 'Fix the login redirect loop' };
+  assert.equal(await run('UserPromptSubmit', prompt('Fix the login redirect loop', same), repeated.deps), null);
+  assert.equal(readState(repeated.dir, 's1').stage, 'user');
+  assert.equal(repeated.generateCalls.length, 0);
+
+  // No state (pruned, or enabled mid-session): an equal title is not enough.
+  const stateless = makeDeps();
+  assert.equal(await run('UserPromptSubmit', prompt('Fix the login redirect loop', same), stateless.deps), null);
+
+  // A name set at start stays the user's even if a later prompt would match it.
+  const later = makeDeps();
+  await run('SessionStart', startup({ session_title: CUT }), later.deps);
+  await run('UserPromptSubmit', prompt('Outro pedido qualquer aqui', { session_title: CUT }), later.deps);
+  assert.equal(await run('UserPromptSubmit', prompt(LONG, { session_title: CUT }), later.deps), null);
+});

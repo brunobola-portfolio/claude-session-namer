@@ -67,8 +67,16 @@ few seconds the title reads `<repo> - <topic>`, in the terminal and in the
 session list (`claude --resume`, `codex resume`, and so on). `status` and
 `/session-name --doctor` show the details.
 
-**Update:** `/plugin marketplace update claude-session-namer` in Claude Code;
-for other agents, run the same `install` command with the newer version.
+**Update:** Claude Code leaves auto-update off for third-party marketplaces.
+Turn it on once in `/plugin`, **Marketplaces**, `claude-session-namer`, or
+update by hand:
+
+```bash
+claude plugin marketplace update claude-session-namer
+claude plugin update session-namer@claude-session-namer
+```
+
+For other agents, run the same `install` command with the newer version.
 
 ## The problem it solves
 
@@ -101,6 +109,7 @@ opening any of them.
 | Stable in Remote Control | Follows your latest message | Fixed once set, like `/rename` |
 | VS Code sidebar | Its own generated title | Set again on the next two prompts, so it does not drift |
 | Your own `/rename` or `--name` | Respected | Respected, detected even mid-session |
+| Host apps that title a session with your cut-off prompt (T3 Code) | Keeps `Fix the login redirect loop that hap...` | Replaced by project and topic |
 | Per-repository project name | No | `.session-namer.json` |
 | Diagnostics | No | `/session-name --doctor` with a timed dry run |
 | Other agents | Claude Code only | 13 more, see below |
@@ -220,6 +229,7 @@ Run `/session-name --doctor` in Claude Code, or
 | Project name but never a topic | `claude` not found, or the call fails | Doctor shows the path and a dry run; set `SESSION_NAMER_CLAUDE_PATH` |
 | Dry run says `Not logged in` | `SESSION_NAMER_BARE=1` with an OAuth login | Unset it; bare mode needs an API key |
 | Nothing happens | Node.js not on `PATH`, or `enabled=false` | Install Node 18+, check the options |
+| Title is the start of your prompt and `...` | The host app set it and the plugin is older than 1.4.4 | Update; doctor shows the version |
 | Topic in the wrong language | The model slipped | `/session-name <topic>` or `/session-name --regenerate` |
 | VS Code sidebar shows an older title | The extension caches its list | Reopen the session; `claude --resume` shows the current title |
 

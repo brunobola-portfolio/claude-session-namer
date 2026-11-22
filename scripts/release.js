@@ -109,7 +109,7 @@ function releaseFooter(version, { npm = false } = {}) {
   const lines = [
     '---',
     '',
-    `**Install.** Claude Code: \`/plugin marketplace add brunobola-portfolio/claude-session-namer\`, then \`/plugin install session-namer@claude-session-namer\` (update with \`/plugin marketplace update claude-session-namer\`). Any other agent: ${npm
+    `**Install.** Claude Code: \`/plugin marketplace add brunobola-portfolio/claude-session-namer\`, then \`/plugin install session-namer@claude-session-namer\` (update with \`claude plugin marketplace update claude-session-namer\`, then \`claude plugin update session-namer@claude-session-namer\`). Any other agent: ${npm
       ? `\`npx -y session-namer@${version} install --detect\``
       : `\`npx -y github:brunobola-portfolio/claude-session-namer#v${version} install --detect\``}.`,
   ];

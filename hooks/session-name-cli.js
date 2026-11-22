@@ -38,6 +38,7 @@ function claudeVersion(claudePath) {
 
 async function doctor(env = process.env) {
   const out = [];
+  out.push(line('OK', `session-namer ${require('../package.json').version}`));
   const major = Number(process.versions.node.split('.')[0]);
   out.push(line(major >= 18 ? 'OK' : 'FAIL', `Node.js ${process.versions.node} (${process.execPath})`));
 

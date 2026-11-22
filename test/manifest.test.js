@@ -26,6 +26,11 @@ test('plugin.json is valid and declares the documented userConfig keys', () => {
   }
 });
 
+test('the plugin root has no CLAUDE.md, which `claude plugin validate --strict` rejects', () => {
+  assert.equal(fs.existsSync(path.join(root, 'CLAUDE.md')), false);
+  assert.match(fs.readFileSync(path.join(root, '.claude', 'CLAUDE.md'), 'utf8'), /^@\.\.\/AGENTS\.md\s*$/);
+});
+
 test('marketplace.json points at this plugin with the same version', () => {
   const plugin = readJson('.claude-plugin/plugin.json');
   const market = readJson('.claude-plugin/marketplace.json');

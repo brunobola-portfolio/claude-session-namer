@@ -94,7 +94,29 @@ test('resolveProject falls back to cwd basename and honours override', () => {
   assert.equal(resolveProject({ cwd: 'D:/x/ünïcode ✓', projectSource: 'git', git: throwing }), 'ünïcode ✓');
 });
 
-const { sanitizeProject } = require('../lib/title');
+const { sanitizeProject, promptEcho } = require('../lib/title');
+
+test('promptEcho recognises a title a host app cut from the prompt, and nothing else', () => {
+  const text = 'Analisa o que falta do projeto por concluir e vê se fica tudo bem';
+  assert.equal(promptEcho('Analisa o que falta do projeto por concluir e vê s...', text), 'cut');
+  assert.equal(promptEcho('Analisa o que falta do projeto…', text), 'cut');
+  assert.equal(promptEcho('Fix the bug in login...', 'Fix the bug\n\n  in login and add tests'), 'cut', 'line breaks collapse');
+  assert.equal(promptEcho('See the screenshot and fix...', 'See the screenshot [Image: a.png; 10x10] and fix the header'), 'cut');
+  assert.equal(promptEcho('Fix the login bug', 'Fix the login bug'), 'whole');
+  assert.equal(promptEcho('Fix the login', 'Fix the login bug'), null, 'a prefix without an ellipsis can be a chosen name');
+  assert.equal(promptEcho('Fix...', 'Fix the login bug'), null, 'too short to tell');
+  assert.equal(promptEcho('Release plan for spring...', text), null);
+  assert.equal(promptEcho('Fix the login bug...', 'Fix the login bug'), null);
+  assert.equal(promptEcho('', text), null);
+  assert.equal(promptEcho('x', null), null);
+});
+
+test('promptEcho stays fast on a huge prompt full of unclosed markers', () => {
+  const started = Date.now();
+  assert.equal(promptEcho('abcdefghijklmnop...', ' [Image'.repeat(300000)), null);
+  assert.equal(promptEcho('Fix the login redirect...', `Fix the login redirect loop ${'x '.repeat(500000)}`), 'cut');
+  assert.ok(Date.now() - started < 500);
+});
 
 test('sanitizeTopic accepts unspaced scripts (CJK, Thai) by length', () => {
   assert.equal(sanitizeTopic('修复登录重定向循环问题'), '修复登录重定向循环问题');
