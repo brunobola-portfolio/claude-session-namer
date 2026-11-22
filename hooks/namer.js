@@ -115,7 +115,7 @@ async function run(event, input, deps = {}) {
   const log = (msg) => state.appendLog(dir, `${event} ${sessionId.slice(0, 8)} ${msg}`);
   const project = title.resolveProject({ cwd, projectSource: cfg.projectSource, git, override: cfg.projectOverride });
   const current = state.readState(dir, sessionId);
-  const st = current && current.v === STATE_VERSION ? current : null;
+  let st = current && current.v === STATE_VERSION ? current : null;
   const save = (patch) => state.writeState(dir, sessionId, { v: STATE_VERSION, project, attempts: 0, ...(st || {}), ...patch, ts: now() });
 
   if (event === 'SessionStart') {
@@ -125,6 +125,8 @@ async function run(event, input, deps = {}) {
     const existing = typeof input.session_title === 'string' ? input.session_title.trim() : '';
     if (existing) {
       if (st && existing === st.title) return null; // our own title, nothing to do
+      // The host's placeholder, already identified on an earlier prompt: not a user's choice.
+      if (st && st.hostTitle && existing === st.hostTitle) return st.stage === 'final' ? output(event, st.title) : null;
       // Our provisional title on a session whose state was pruned: keep naming it.
       if (!st && existing === project) {
         save({ stage: 'provisional', title: project });
@@ -148,7 +150,25 @@ async function run(event, input, deps = {}) {
     // Claude Code passes the current custom title. One we did not set means the
     // user renamed the session (/rename, claude.ai): hands off from now on.
     const custom = typeof input.session_title === 'string' ? input.session_title.trim() : '';
-    if (!command && custom && !(st && custom === st.title)) {
+    // A title that is only the prompt itself came from the host app, so it does
+    // not count. Two guards keep a deliberate name safe: only the session's
+    // first prompt is compared, and a title that was there before the hook could
+    // see it arrive (which may be a `--name`) has to be a cut-off prompt, not
+    // merely an equal one.
+    const first = Boolean(st && !st.prompted && !st.attempts);
+    const echo = custom && !command && (!st || first) ? title.promptEcho(custom, input.prompt) : null;
+    const isPlaceholder = echo === 'cut'
+      ? !st || st.stage === 'provisional' || (st.stage === 'user' && st.title === custom)
+      : echo === 'whole' && first && st.stage === 'provisional';
+    if (isPlaceholder) {
+      st = { ...(st || {}), stage: 'provisional', title: project, hostTitle: custom, prompted: true };
+      save({});
+      log('host placeholder title, naming the session anyway');
+    } else if (first) {
+      st = { ...st, prompted: true };
+      save({});
+    }
+    if (!command && custom && !(st && (custom === st.title || custom === st.hostTitle))) {
       if (!st || st.stage !== 'user' || st.title !== custom) {
         save({ stage: 'user', title: custom });
         log('user-titled mid-session, leaving alone');

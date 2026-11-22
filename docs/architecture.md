@@ -139,6 +139,15 @@ of every turn.
 last title the plugin set, the user renamed the session, and the plugin steps
 aside for good.
 
+**A title that only repeats the prompt is not a user title.** Apps that host
+Claude Code can set a custom title of their own: T3 Code uses the first 50
+characters of the prompt and `...`. `promptEcho` compares the title with the
+prompt being submitted. A cut-off prompt, or a title equal to the whole prompt,
+is the host's placeholder and gets replaced. Two guards protect a name you chose: only
+the session's first prompt is compared, and a title already there at session
+start must be a cut-off prompt (an equal one may be your `--name`). If the host
+later sets a title that is not the prompt, that one is kept.
+
 **Headless sessions are skipped.** `claude -p` runs (detected through
 `CLAUDE_CODE_ENTRYPOINT=sdk-cli`) are left alone unless `name_headless` is on,
 so scripts and CI never pay for a title nobody will read.

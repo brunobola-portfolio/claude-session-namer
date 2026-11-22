@@ -113,7 +113,11 @@ upgradeable. Codex asks you to trust its hooks again after an upgrade because
 the hook command changed.
 
 Claude Code updates through its own plugin system:
-`/plugin marketplace update claude-session-namer` (then restart Claude Code).
+`claude plugin marketplace update claude-session-namer`, then
+`claude plugin update session-namer@claude-session-namer` (and restart Claude
+Code, or run `/reload-plugins`). To get updates automatically, turn on
+auto-update in `/plugin`, **Marketplaces**: it is off by default for
+third-party marketplaces.
 
 ## Per agent
 

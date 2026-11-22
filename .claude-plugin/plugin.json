@@ -9,6 +9,10 @@
   "homepage": "https://github.com/brunobola-portfolio/claude-session-namer",
   "repository": "https://github.com/brunobola-portfolio/claude-session-namer",
   "license": "MIT",
+  "icon": "./.claude-plugin/icon.png",
+  "documentationUrl": "https://github.com/brunobola-portfolio/claude-session-namer#readme",
+  "supportUrl": "https://github.com/brunobola-portfolio/claude-session-namer/issues",
+  "privacyPolicyUrl": "https://github.com/brunobola-portfolio/claude-session-namer#privacy-and-safety",
   "keywords": [
     "session",
     "title",

@@ -7,6 +7,18 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- **`/session-name --doctor` starts with the installed plugin version.** The
+  README explains how to turn on auto-update, which Claude Code leaves off for
+  third-party marketplaces.
+
+### Fixed
+
+- **Sessions started from T3 Code get a title.** T3 Code names each session with
+  the start of your prompt and `...`, which the plugin took for a rename of
+  yours. It now replaces that placeholder; names you choose still win.
+
 ## [1.4.3] - 2026-11-16
 
 ### Fixed

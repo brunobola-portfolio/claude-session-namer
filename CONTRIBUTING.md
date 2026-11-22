@@ -83,8 +83,9 @@ Open the release PR, merge it, then tag the merge commit on `main`
 [Release workflow](.github/workflows/release.yml) refuses a tag that does not
 match the manifests or is not on `main`, runs the tests and publishes the
 GitHub release with the changelog section as its notes. Claude Code users get
-the update from the marketplace (`/plugin marketplace update
-claude-session-namer`); everyone else re-runs the pinned `npx` command.
+the update from the marketplace (`claude plugin marketplace update
+claude-session-namer`, then `claude plugin update
+session-namer@claude-session-namer`); everyone else re-runs the pinned `npx` command.
 
 The same workflow then publishes the tag to npm as `session-namer`, with
 provenance, through npm trusted publishing: no token is stored in the
